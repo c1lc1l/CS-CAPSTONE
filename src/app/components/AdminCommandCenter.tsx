@@ -498,11 +498,11 @@ export function AdminCommandCenter({
   }, [liveStudentCount, pendingCount, riskData]);
 
   return (
-    <div className="h-full overflow-y-auto" style={{ background: "#0d1320", fontFamily: GROTESK }}>
-      <div className="px-6 pt-5 pb-4 border-b border-[#1a2640]" style={{ background: "#0f1828" }}>
+    <div className="runa-admin-view h-full overflow-y-auto" style={{ background: "rgba(255,255,255,0.24)", fontFamily: GROTESK }}>
+      <div className="px-6 pt-5 pb-4 border-b border-white/60" style={{ background: "rgba(255,255,255,0.38)" }}>
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
           <div className="flex flex-wrap items-center gap-3 lg:gap-4 min-w-0">
-            <span className="tracking-widest uppercase shrink-0" style={{ fontSize: "12px", fontFamily: MONO, color: "#7eb5f5" }}>
+            <span className="tracking-widest uppercase shrink-0" style={{ fontSize: "12px", fontFamily: MONO, color: "#3156b8" }}>
               RUNA COMMAND CENTER
             </span>
             <select
@@ -510,9 +510,9 @@ export function AdminCommandCenter({
               onChange={(e) => setLabId(e.target.value as ComlabId)}
               className="rounded-md border px-2 py-1 outline-none"
               style={{
-                background: "#162035",
-                borderColor: "#2a3a55",
-                color: "#c5d5ea",
+                background: "rgba(247,248,253,0.92)",
+                borderColor: "rgba(99,102,241,0.2)",
+                color: "#17233d",
                 fontSize: "10px",
                 fontFamily: MONO,
               }}
@@ -533,7 +533,7 @@ export function AdminCommandCenter({
               type="button"
               title="Refresh health"
               onClick={handleRefresh}
-              className="w-9 h-9 rounded-md border border-[#2a3a55] flex items-center justify-center text-[#7eb5f5] hover:bg-[#162035] transition-colors"
+              className="w-9 h-9 rounded-md border border-[#cbd5f0] flex items-center justify-center text-[#4169e1] bg-white/50 hover:bg-white/80 transition-colors"
             >
               <RefreshCw size={16} />
             </button>
@@ -562,7 +562,7 @@ export function AdminCommandCenter({
                 URL.revokeObjectURL(url);
                 pushToast("Audit export generated.", "success");
               }}
-              className="w-9 h-9 rounded-md border border-[#2a3a55] flex items-center justify-center text-[#7eb5f5] hover:bg-[#162035] transition-colors"
+              className="w-9 h-9 rounded-md border border-[#cbd5f0] flex items-center justify-center text-[#4169e1] bg-white/50 hover:bg-white/80 transition-colors"
             >
               <Download size={16} />
             </button>
@@ -625,7 +625,7 @@ export function AdminCommandCenter({
           {/* Row 2 left — occupancy */}
           <div
             className="rounded-[10px] p-5 border min-h-[280px] flex flex-col xl:col-span-7"
-            style={{ background: "#1a2640", borderColor: "rgba(58,111,255,0.15)" }}
+            style={{ background: "rgba(255,255,255,0.66)", borderColor: "rgba(99,102,241,0.16)", boxShadow: "0 10px 26px rgba(45,72,155,0.1)" }}
           >
             <p className="text-[#c5d5ea] mb-2" style={{ fontSize: "13px" }}>
               Lab Occupancy (current window)
@@ -633,9 +633,9 @@ export function AdminCommandCenter({
             <div className="flex-1 min-h-[180px]">
               <ResponsiveContainer width="100%" height={220}>
                 <BarChart data={occupancyData} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(58,111,255,0.1)" vertical={false} />
-                  <XAxis dataKey="lab" tick={{ fill: "#c5d5ea", fontSize: 11 }} axisLine={false} tickLine={false} />
-                  <YAxis tick={{ fill: "#c5d5ea", fontSize: 11 }} axisLine={false} tickLine={false} />
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(99,102,241,0.14)" vertical={false} />
+                  <XAxis dataKey="lab" tick={{ fill: "#52638f", fontSize: 11 }} axisLine={false} tickLine={false} />
+                  <YAxis tick={{ fill: "#52638f", fontSize: 11 }} axisLine={false} tickLine={false} />
                   <Tooltip
                     cursor={{ fill: "rgba(58,111,255,0.06)" }}
                     content={({ active, payload, label }) => {
@@ -644,10 +644,10 @@ export function AdminCommandCenter({
                       return (
                         <div
                           className="rounded-md border px-2.5 py-1.5"
-                          style={{ background: "#111d30", borderColor: "#1e2e48", fontSize: 11 }}
+                          style={{ background: "rgba(255,255,255,0.96)", borderColor: "rgba(99,102,241,0.18)", fontSize: 11 }}
                         >
-                          <div style={{ color: "#c5d5ea" }}>{label}</div>
-                          <div style={{ color: "#7eb5f5", fontFamily: MONO }}>
+                          <div style={{ color: "#17233d" }}>{label}</div>
+                          <div style={{ color: "#4169e1", fontFamily: MONO }}>
                             {row.occupied}/{row.capacity} seats
                           </div>
                         </div>
@@ -655,7 +655,7 @@ export function AdminCommandCenter({
                     }}
                   />
                   <Bar dataKey="occupied" fill="#3a6fff" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="capacity" fill="rgba(58,111,255,0.15)" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="capacity" fill="rgba(65,105,225,0.15)" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -664,7 +664,7 @@ export function AdminCommandCenter({
           {/* Row 2 right — risk mix + operator actions */}
           <div
             className="rounded-[10px] p-5 border flex flex-col min-h-[280px] xl:col-span-5"
-            style={{ background: "#1a2640", borderColor: "rgba(58,111,255,0.15)" }}
+            style={{ background: "rgba(255,255,255,0.66)", borderColor: "rgba(99,102,241,0.16)", boxShadow: "0 10px 26px rgba(45,72,155,0.1)" }}
           >
             <p className="text-[#c5d5ea] mb-2" style={{ fontSize: "13px" }}>
               Risk & Operator Actions (60m)
@@ -676,24 +676,24 @@ export function AdminCommandCenter({
                 return (
                   <div key={d.name}>
                     <div className="flex items-center justify-between mb-1">
-                      <span style={{ color: "#c5d5ea", fontSize: "11px", fontFamily: MONO }}>{d.name}</span>
+                      <span style={{ color: "#3f568d", fontSize: "11px", fontFamily: MONO, fontWeight: 600 }}>{d.name}</span>
                       <span style={{ color: d.fill, fontSize: "10px", fontFamily: MONO }}>{d.value}</span>
                     </div>
-                    <div className="h-2 rounded-full overflow-hidden" style={{ background: "#111d30" }}>
+                    <div className="h-2 rounded-full overflow-hidden" style={{ background: "rgba(65,105,225,0.15)" }}>
                       <div className="h-full rounded-full" style={{ width: `${width}%`, background: d.fill }} />
                     </div>
                   </div>
                 );
               })}
             </div>
-            <div className="rounded-md border p-3 space-y-2" style={{ borderColor: "#2a3a55", background: "#111d30" }}>
-              <p className="text-[#7eb5f5]" style={{ fontSize: "10px", fontFamily: MONO }}>
+            <div className="rounded-md border p-3 space-y-2" style={{ borderColor: "rgba(99,102,241,0.18)", background: "rgba(247,248,253,0.72)" }}>
+              <p className="text-[#4169e1]" style={{ fontSize: "10px", fontFamily: MONO }}>
                 Recommended next actions
               </p>
               {recommendedActions.map((line) => (
                 <div key={line} className="flex items-start gap-2">
                   <span className="mt-1 w-1.5 h-1.5 rounded-full bg-[#7eb5f5] shrink-0" />
-                  <span className="text-[#c5d5ea]" style={{ fontSize: "11px" }}>
+                  <span className="text-[#243052]" style={{ fontSize: "11px" }}>
                     {line}
                   </span>
                 </div>
@@ -707,7 +707,7 @@ export function AdminCommandCenter({
           </div>
           <div
             className="rounded-[10px] p-5 border min-h-[260px] xl:col-span-4"
-            style={{ background: "#1a2640", borderColor: "rgba(58,111,255,0.15)" }}
+            style={{ background: "rgba(255,255,255,0.66)", borderColor: "rgba(99,102,241,0.16)", boxShadow: "0 10px 26px rgba(45,72,155,0.1)" }}
           >
             <p className="text-[#c5d5ea] mb-3" style={{ fontSize: "13px" }}>
               Recent Critical Incidents
@@ -719,7 +719,7 @@ export function AdminCommandCenter({
                 </p>
               ) : (
                 recentCriticalRows.map((row) => (
-                  <div key={row.id} className="rounded-md border p-2.5" style={{ borderColor: "#2a3a55", background: "#111d30" }}>
+                  <div key={row.id} className="rounded-md border p-2.5" style={{ borderColor: "rgba(99,102,241,0.18)", background: "rgba(247,248,253,0.72)" }}>
                     <p className="text-[#e05c6a]" style={{ fontSize: "10px", fontFamily: MONO }}>
                       {row.eventType.replaceAll("_", " ")}
                     </p>

@@ -13,7 +13,7 @@ export const sectionEyebrowClass =
   "text-[#4a6080] tracking-widest uppercase font-semibold text-[9px]";
 
 /** Muted helper (matches assistant scope bar ~10px). */
-export const bodyMutedClass = "text-[#4a6080] text-[10px] leading-relaxed";
+export const bodyMutedClass = "text-[#52638f] text-[10px] leading-relaxed";
 
 /** Primary rail body copy — between assistant scope (10px) and bubbles (12px). */
-export const bodyClass = "text-[#8aa0c0] text-[11px] leading-snug";
+export const bodyClass = "text-[#243052] text-[11px] leading-snug";

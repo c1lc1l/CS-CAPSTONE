@@ -15,6 +15,7 @@ import {
   NotificationPanel,
   type Notification,
 } from "@/app/components/NotificationPanel";
+import { useElectron } from "../ipc/useElectron";
 
 const GROTESK = "'Space Grotesk', sans-serif";
 const MONO = "'Space Mono', monospace";
@@ -180,9 +181,21 @@ export function NotificationsMenu() {
 }
 
 export function NotificationProvider({ children }: { children: ReactNode }) {
+  const api = useElectron();
   const [notifications, setNotifications] = useState<Notification[]>(INITIAL_NOTIFICATIONS);
   const [toasts, setToasts] = useState<Toast[]>([]);
+  const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const toastSeq = useRef(0);
+
+  useEffect(() => {
+    void api.settings.get().then((settings) => setNotificationsEnabled(settings.notifications !== false));
+    const onSettingsChanged = (event: Event) => {
+      const next = (event as CustomEvent<{ notifications?: boolean }>).detail;
+      if (typeof next?.notifications === "boolean") setNotificationsEnabled(next.notifications);
+    };
+    window.addEventListener("runa-settings-changed", onSettingsChanged);
+    return () => window.removeEventListener("runa-settings-changed", onSettingsChanged);
+  }, [api]);
 
   const unreadCount = useMemo(
     () => notifications.filter((n) => !n.read).length,
@@ -190,9 +203,10 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
   );
 
   const pushToast = useCallback((msg: string, type: PushToastType = "info") => {
+    if (!notificationsEnabled) return;
     const id = `t-${toastSeq.current++}`;
     setToasts((prev) => [{ id, message: msg, type }, ...prev].slice(0, 5));
-  }, []);
+  }, [notificationsEnabled]);
 
   const dismissToast = useCallback((id: string) => {
     setToasts((prev) => prev.filter((t) => t.id !== id));

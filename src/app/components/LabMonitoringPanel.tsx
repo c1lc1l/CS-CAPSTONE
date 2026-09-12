@@ -14,10 +14,10 @@ const GROTESK = ADMIN_FONT_SANS;
 type PCStatus = "active" | "idle" | "alert" | "offline";
 
 const PC_STATUS_STYLE: Record<PCStatus, { bg: string; border: string; text: string }> = {
-  active: { bg: "#162a50", border: "#3a6fff", text: "#7eb5f5" },
-  idle: { bg: "#111d30", border: "#1e2e48", text: "#4a6080" },
-  alert: { bg: "#3a1020", border: "#e05c6a", text: "#e05c6a" },
-  offline: { bg: "#0d1320", border: "#1a2235", text: "#2a3a55" },
+  active: { bg: "#e0eaff", border: "#4169e1", text: "#3156b8" },
+  idle: { bg: "#f1f4fb", border: "#cbd5f0", text: "#6474a2" },
+  alert: { bg: "#fff1f2", border: "#e05c6a", text: "#c2415e" },
+  offline: { bg: "#e8edf7", border: "#b8c5e2", text: "#7b88a5" },
 };
 
 type UsbDevice = {
@@ -416,11 +416,11 @@ export function LabMonitoringPanel() {
   const activeCount = pcs.filter((p) => p.status === "active").length;
 
   return (
-    <div className="h-full overflow-y-auto" style={{ background: "#0d1320", fontFamily: GROTESK }}>
+    <div className="runa-admin-view h-full overflow-y-auto" style={{ background: "rgba(255,255,255,0.24)", fontFamily: GROTESK }}>
       {/* Top bar */}
       <div
-        className="flex items-center justify-between px-6 h-12 border-b border-[#1a2640] shrink-0"
-        style={{ background: "#0a1020" }}
+        className="flex items-center justify-between px-6 h-12 border-b border-white/60 shrink-0"
+        style={{ background: "rgba(255,255,255,0.38)" }}
       >
         <div className="flex items-center gap-3">
           <span className="text-[#c5d5ea]" style={{ fontSize: "13px", fontFamily: MONO }}>RUNA · LAB MONITORING</span>
@@ -437,7 +437,7 @@ export function LabMonitoringPanel() {
       </div>
 
       {/* COMLAB tabs */}
-      <div className="flex border-b border-[#1a2640]" style={{ background: "#0f1828" }}>
+      <div className="flex border-b border-white/60" style={{ background: "rgba(255,255,255,0.38)" }}>
         {COMLAB_DEFINITIONS.map((lab) => (
           <button
             key={lab.id}
@@ -448,8 +448,9 @@ export function LabMonitoringPanel() {
             }}
             className="flex items-center gap-2 px-5 py-3 transition-all"
             style={{
-              borderBottom: activeTab === lab.id ? "2px solid #3a6fff" : "2px solid transparent",
-              color: activeTab === lab.id ? "#7eb5f5" : "#4a6080",
+              borderBottom: activeTab === lab.id ? "2px solid #4169e1" : "2px solid transparent",
+              color: activeTab === lab.id ? "#3156b8" : "#526b9f",
+              background: activeTab === lab.id ? "rgba(224,231,255,0.72)" : "transparent",
             }}
           >
             <span style={{ fontSize: "12px", fontFamily: MONO }}>{lab.label}</span>
@@ -461,7 +462,7 @@ export function LabMonitoringPanel() {
         {/* Session hero */}
         <div
           className="flex items-center justify-between px-6 py-4 rounded-xl border"
-          style={{ background: "#111d30", borderColor: "#1e2e48" }}
+          style={{ background: "rgba(255,255,255,0.66)", borderColor: "rgba(99,102,241,0.16)", boxShadow: "0 10px 26px rgba(45,72,155,0.1)" }}
         >
           <div>
             <p className="text-[#4a6080] tracking-widest uppercase mb-1" style={{ fontSize: "8px", fontFamily: MONO }}>
@@ -578,9 +579,9 @@ export function LabMonitoringPanel() {
               placeholder="https://example.com"
               className="flex-1 rounded px-2 py-1.5 border outline-none"
               style={{
-                background: "#0d1320",
-                borderColor: "#1e2e48",
-                color: "#c5d5ea",
+                background: "rgba(247,248,253,0.92)",
+                borderColor: "rgba(99,102,241,0.2)",
+                color: "#17233d",
                 fontSize: "10px",
                 fontFamily: MONO,
               }}
@@ -615,7 +616,7 @@ export function LabMonitoringPanel() {
         </div>
 
         {usbTimeline.visible && (
-          <div className="rounded-xl border p-4" style={{ background: "#111d30", borderColor: "#1e2e48" }}>
+          <div className="rounded-xl border p-4" style={{ background: "rgba(255,255,255,0.66)", borderColor: "rgba(99,102,241,0.16)" }}>
             <div className="flex items-center gap-2 mb-3">
               <Activity size={14} className="text-[#7eb5f5]" />
               <span className="text-[#c5d5ea]" style={{ fontSize: "12px" }}>
@@ -664,7 +665,7 @@ export function LabMonitoringPanel() {
 
         <div className="grid grid-cols-3 gap-5">
           {/* Workstation Layout */}
-          <div className="col-span-2 rounded-xl p-5 border" style={{ background: "#111d30", borderColor: "#1e2e48" }}>
+          <div className="col-span-2 rounded-xl p-5 border" style={{ background: "rgba(255,255,255,0.66)", borderColor: "rgba(99,102,241,0.16)" }}>
             <div className="flex items-center justify-between mb-4">
               <span className="text-[#c5d5ea]" style={{ fontSize: "13px" }}>Lab Workstation Layout</span>
             </div>
@@ -745,7 +746,7 @@ export function LabMonitoringPanel() {
           </div>
 
           {/* Live Attendance */}
-          <div className="rounded-xl p-5 border" style={{ background: "#111d30", borderColor: "#1e2e48" }}>
+          <div className="rounded-xl p-5 border" style={{ background: "rgba(255,255,255,0.66)", borderColor: "rgba(99,102,241,0.16)" }}>
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
                 <Users size={13} className="text-[#3a6fff]" />
@@ -763,7 +764,7 @@ export function LabMonitoringPanel() {
                 <div
                   key={i}
                   className="p-3 rounded-lg border"
-                  style={{ background: "#0d1320", borderColor: "#1e2e48" }}
+                  style={{ background: "rgba(247,248,253,0.82)", borderColor: "rgba(99,102,241,0.16)" }}
                 >
                   <div className="flex items-center justify-between mb-1">
                     <span className="text-[#c5d5ea]" style={{ fontSize: "12px" }}>{a.name}</span>

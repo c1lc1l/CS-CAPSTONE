@@ -39,14 +39,17 @@ export function PythonServiceBadge() {
   }, [python]);
 
   const dot =
-    reachable === null ? "#2a3a55" : reachable ? "#4ac77e" : "#e8821a";
+      reachable === null ? "#6474a2" : reachable ? "#16a05d" : "#b86b2d";
   const label =
     reachable === null ? "Security service …" : reachable ? "Security service OK" : "Security service offline";
 
   return (
     <div
-      className="flex items-center gap-2 px-2 py-1 rounded-sm border border-[#1e2e48]"
-      style={{ background: "#111d30" }}
+      className="flex items-center gap-2 px-2 py-1 rounded-md border"
+      style={{
+        background: reachable === false ? "rgba(255,247,237,0.58)" : "rgba(247,248,253,0.82)",
+          borderColor: reachable === false ? "rgba(249,115,22,0.2)" : "rgba(99,102,241,0.18)",
+      }}
       title={
         health
           ? `clamd=${String(health.clamd)} usb=${String(health.usb)}`
@@ -56,11 +59,11 @@ export function PythonServiceBadge() {
       }
     >
       <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: dot }} />
-      <span className="text-[#c5d5ea] tracking-tight" style={{ fontSize: "9px", fontFamily: MONO }}>
+      <span className="text-[#3f568d] tracking-tight" style={{ fontSize: "9px", fontFamily: MONO, fontWeight: 600 }}>
         {label}
       </span>
       {health && reachable && (
-        <span className="text-[#4a6080] hidden sm:inline" style={{ fontSize: "8px", fontFamily: MONO }}>
+        <span className="text-[#526b9f] hidden sm:inline" style={{ fontSize: "8px", fontFamily: MONO }}>
           clam {health.clamd ? "on" : "off"} · usb {health.usb ? "on" : "off"}
         </span>
       )}

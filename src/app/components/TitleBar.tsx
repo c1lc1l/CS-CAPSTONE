@@ -26,8 +26,8 @@ export function TitleBar({ title = "PCU Lab Portal" }: TitleBarProps) {
     style={{
       // -webkit-app-region: drag makes the whole bar draggable in Electron
       WebkitAppRegion: "drag",
-      background: "#0a1220",
-      borderBottom: "1px solid #1e2e48",
+      background: "rgba(255,255,255,0.7)",
+      borderBottom: "1px solid rgba(99, 102, 241, 0.16)",
       height: 36,
       display: "flex",
       alignItems: "center",
@@ -36,12 +36,13 @@ export function TitleBar({ title = "PCU Lab Portal" }: TitleBarProps) {
       paddingRight: 0,
       userSelect: "none",
       flexShrink: 0,
+      backdropFilter: "blur(18px)",
     } as any}
   >
       {/* App label */}
       <span
         style={{
-          color: "#4a6fa5",
+          color: "#3d5cad",
           fontSize: 10,
           fontFamily: MONO,
           letterSpacing: "0.15em",
@@ -58,12 +59,12 @@ export function TitleBar({ title = "PCU Lab Portal" }: TitleBarProps) {
           WebkitAppRegion: "no-drag",
         } as any}
       >
-        <WinBtn icon={<Minus size={10} />} onClick={minimize} hover="#2a3a55" />
-        <WinBtn icon={<Square size={9} />} onClick={maximize} hover="#2a3a55" />
+        <WinBtn icon={<Minus size={10} />} onClick={minimize} hover="rgba(65, 105, 225, 0.12)" />
+        <WinBtn icon={<Square size={9} />} onClick={maximize} hover="rgba(65, 105, 225, 0.12)" />
         <WinBtn
           icon={<X size={11} />}
           onClick={close}
-          hover="#6b1a1a"
+          hover="rgba(224, 92, 106, 0.18)"
           closeBtn
         />
       </div>
@@ -94,19 +95,19 @@ function WinBtn({
         justifyContent: "center",
         background: "transparent",
         border: "none",
-        color: "#4a6080",
+        color: "#52638f",
         cursor: "pointer",
         transition: "background 0.15s, color 0.15s",
       }}
       onMouseEnter={(e) => {
         (e.currentTarget as HTMLButtonElement).style.background = hover;
         (e.currentTarget as HTMLButtonElement).style.color = closeBtn
-          ? "#ff6b6b"
-          : "#c5d5ea";
+          ? "#d14b62"
+          : "#17233d";
       }}
       onMouseLeave={(e) => {
         (e.currentTarget as HTMLButtonElement).style.background = "transparent";
-        (e.currentTarget as HTMLButtonElement).style.color = "#4a6080";
+        (e.currentTarget as HTMLButtonElement).style.color = "#52638f";
       }}
     >
       {icon}

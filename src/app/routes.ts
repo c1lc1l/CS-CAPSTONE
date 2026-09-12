@@ -4,6 +4,7 @@ import { LoginPage } from "./components/LoginPage";
 import { Dashboard } from "./components/Dashboard";
 import { StudentDashboard } from "./components/StudentDashboard";
 import { AccessCodePage } from "./components/AccessCodePage";
+import { SettingsPanel } from "./components/SettingsPanel";
 
 export const router = createHashRouter([
   {
@@ -14,6 +15,7 @@ export const router = createHashRouter([
       { path: "access-code", Component: AccessCodePage },
       { path: "dashboard", Component: Dashboard },
       { path: "student-dashboard", Component: StudentDashboard },
+      { path: "settings", Component: SettingsPanel },
     ],
   },
 ]);

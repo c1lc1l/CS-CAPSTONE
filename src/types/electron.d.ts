@@ -134,7 +134,7 @@ interface ElectronSession {
   expiresAt: number;
 }
 
-interface ElectronSettings {
+export interface ElectronSettings {
   kioskMode: boolean;
   theme: "dark" | "light";
   notifications: boolean;

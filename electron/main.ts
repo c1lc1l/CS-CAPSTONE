@@ -217,7 +217,7 @@ const store = new Store({
     labStationProfile: { comlabId: "08", workstationLabel: "PC-01" } satisfies LabStationProfile,
     settings: {
       kioskMode: false,
-      theme: "dark",
+      theme: "light",
       notifications: true,
     },
     labShortcuts: [] as LabShortcutRow[],
@@ -512,14 +512,25 @@ async function upsertApprovalsRemote(rows: ApprovalRequest[]): Promise<void> {
 }
 
 async function readQueueShared(): Promise<ApprovalRequest[]> {
-  const remote = await listApprovalsRemote();
-  setQueue(remote);
-  return remote;
+  try {
+    const remote = await listApprovalsRemote();
+    setQueue(remote);
+    return remote;
+  } catch (e) {
+    const local = getQueue();
+    console.warn("[main] Falling back to local approvals queue; cloud unavailable:", e);
+    setQueue(local);
+    return local;
+  }
 }
 
 async function writeQueueShared(rows: ApprovalRequest[]): Promise<void> {
   setQueue(rows);
-  await upsertApprovalsRemote(rows);
+  try {
+    await upsertApprovalsRemote(rows);
+  } catch (e) {
+    console.warn("[main] Cloud approvals write unavailable, keeping local queue only:", e);
+  }
 }
 
 function nextAuditId(): number {
@@ -548,7 +559,9 @@ function logEvent(row: Omit<AuditRow, "id" | "createdAt"> & { id?: number; creat
     confidenceScore: row.confidenceScore,
   };
   setAuditRows([...getAuditRows(), full]);
-  void insertAuditRemote(full);
+  void insertAuditRemote(full).catch((e) => {
+    console.warn("[main] Local-only audit write; cloud unavailable:", e);
+  });
   return full;
 }
 
@@ -635,9 +648,21 @@ async function upsertBlockedDomainRemote(domain: string): Promise<void> {
 }
 
 async function readBlockedDomainsShared(): Promise<string[]> {
-  const remote = await listBlockedDomainsRemote();
-  store.set("blockedDomains", remote);
-  return remote;
+  try {
+    const remote = await listBlockedDomainsRemote();
+    store.set("blockedDomains", remote);
+    return remote;
+  } catch (e) {
+    const local = Array.isArray(store.get("blockedDomains")) ? StringArrayFromStore(store.get("blockedDomains")) : [];
+    console.warn("[main] Falling back to local blocked domains; cloud unavailable:", e);
+    return local;
+  }
+}
+
+function StringArrayFromStore(value: unknown): string[] {
+  return Array.isArray(value)
+    ? value.filter((v): v is string => typeof v === "string").map((v) => v.trim()).filter(Boolean)
+    : [];
 }
 
 function findRequest(id: string): ApprovalRequest | undefined {

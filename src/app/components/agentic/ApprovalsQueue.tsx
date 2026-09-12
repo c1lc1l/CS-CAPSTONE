@@ -105,12 +105,12 @@ export function ApprovalsQueue({ currentAdminId, onChange }: ApprovalsQueueProps
   return (
     <div
       className="h-full flex flex-col"
-      style={{ background: "#0d1320", fontFamily: GROTESK }}
+      style={{ background: "rgba(255,255,255,0.24)", fontFamily: GROTESK }}
     >
       {/* Header */}
       <div
         className="flex items-center justify-between px-6 py-4 border-b border-[#1e2e48]"
-        style={{ background: "#101a2c" }}
+        style={{ background: "rgba(255,255,255,0.42)" }}
       >
         <div>
           <p
@@ -129,15 +129,15 @@ export function ApprovalsQueue({ currentAdminId, onChange }: ApprovalsQueueProps
         <div className="flex items-center gap-3">
           <button
             onClick={refresh}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-sm border border-[#2a3a55] text-[#7eb5f5] hover:bg-[#1a2a44] transition-colors"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-sm border border-[#cbd5f0] bg-white/45 text-[#4169e1] hover:bg-[#eef2ff] transition-colors"
             style={{ fontSize: "10px", fontFamily: MONO }}
             title="Refresh queue"
           >
             <RefreshCw size={11} /> REFRESH
           </button>
           <div
-            className="px-3 py-1.5 rounded-sm border border-[#1e2e48]"
-            style={{ background: "#0f1a2a", fontSize: "10px", fontFamily: MONO }}
+            className="px-3 py-1.5 rounded-sm border border-[#cbd5f0]"
+            style={{ background: "rgba(247,248,253,0.82)", fontSize: "10px", fontFamily: MONO }}
           >
             <span className="text-[#4a6080] tracking-widest uppercase">Pending</span>
             <span className="text-[#e8a83a] ml-2 tabular-nums">{pending.length}</span>
@@ -146,12 +146,12 @@ export function ApprovalsQueue({ currentAdminId, onChange }: ApprovalsQueueProps
       </div>
 
       {/* Tab strip */}
-      <div className="flex border-b border-[#1e2e48]" style={{ background: "#0f1828" }}>
+      <div className="flex border-b border-white/60" style={{ background: "rgba(255,255,255,0.42)" }}>
         <button
           onClick={() => setTab("pending")}
           className="flex items-center gap-2 px-5 py-2.5 transition-all"
           style={{
-            background: tab === "pending" ? "#0d1320" : "transparent",
+            background: tab === "pending" ? "rgba(255,247,237,0.72)" : "transparent",
             borderBottom: tab === "pending" ? "2px solid #e8a83a" : "2px solid transparent",
             color: tab === "pending" ? "#e8a83a" : "#4a6080",
             fontSize: "10px",
@@ -165,7 +165,7 @@ export function ApprovalsQueue({ currentAdminId, onChange }: ApprovalsQueueProps
           onClick={() => setTab("history")}
           className="flex items-center gap-2 px-5 py-2.5 transition-all"
           style={{
-            background: tab === "history" ? "#0d1320" : "transparent",
+            background: tab === "history" ? "rgba(238,242,255,0.72)" : "transparent",
             borderBottom: tab === "history" ? "2px solid #4a6fa5" : "2px solid transparent",
             color: tab === "history" ? "#7eb5f5" : "#4a6080",
             fontSize: "10px",
@@ -224,7 +224,7 @@ export function ApprovalsQueue({ currentAdminId, onChange }: ApprovalsQueueProps
         >
           <div
             className="w-[480px] rounded-sm border border-[#2a3a55] overflow-hidden"
-            style={{ background: "#111d30" }}
+            style={{ background: "rgba(255,255,255,0.92)" }}
             onClick={(e) => e.stopPropagation()}
           >
             <div className="px-5 py-3 border-b border-[#1e2e48]">
@@ -300,12 +300,12 @@ function RequestCard({ request, busy, onApprove, onReject, onRequestInfo }: Requ
   return (
     <div
       className="rounded-sm border border-[#2a3a55] overflow-hidden"
-      style={{ background: "#111d30" }}
+      style={{ background: "rgba(255,255,255,0.68)", boxShadow: "0 10px 26px rgba(45,72,155,0.1)" }}
     >
       {/* Card header */}
       <div
         className="flex items-center justify-between px-4 py-2.5 border-b border-[#1e2e48]"
-        style={{ background: "#0f1828" }}
+        style={{ background: "rgba(247,248,253,0.72)" }}
       >
         <div className="flex items-center gap-3">
           <span
@@ -348,7 +348,7 @@ function RequestCard({ request, busy, onApprove, onReject, onRequestInfo }: Requ
           <pre
             className="text-[#c5d5ea] whitespace-pre-wrap break-words p-2 rounded-sm border border-[#1e2e48]"
             style={{
-              background: "#0f1a2a",
+              background: "rgba(247,248,253,0.92)",
               fontSize: "11px",
               fontFamily: MONO,
               lineHeight: 1.4,
@@ -382,7 +382,7 @@ function RequestCard({ request, busy, onApprove, onReject, onRequestInfo }: Requ
       {/* Actions */}
       <div
         className="flex items-center justify-end gap-2 px-4 py-3 border-t border-[#1e2e48]"
-        style={{ background: "#0d1626" }}
+        style={{ background: "rgba(247,248,253,0.6)" }}
       >
         <button
           onClick={onRequestInfo}
@@ -434,7 +434,7 @@ function HistoryCard({ request }: { request: ApprovalRequest }) {
   return (
     <div
       className="flex items-center justify-between px-4 py-2.5 rounded-sm border border-[#1e2e48]"
-      style={{ background: "#0f1828" }}
+      style={{ background: "rgba(255,255,255,0.68)" }}
     >
       <div className="flex items-center gap-3">
         <span
