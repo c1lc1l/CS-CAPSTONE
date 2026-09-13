@@ -12,16 +12,44 @@ const isElectron = (): boolean =>
 
 const noop = () => {};
 const asyncNoop = async () => {};
+const BROWSER_SESSION_KEY = "runa.browserSession.v1";
+
+function getBrowserSession(): ElectronSession | null {
+  try {
+    const raw = localStorage.getItem(BROWSER_SESSION_KEY);
+    return raw ? (JSON.parse(raw) as ElectronSession) : null;
+  } catch {
+    return null;
+  }
+}
+
+function setBrowserSession(session: ElectronSession): boolean {
+  try {
+    localStorage.setItem(BROWSER_SESSION_KEY, JSON.stringify(session));
+  } catch {
+    return false;
+  }
+  return true;
+}
+
+function clearBrowserSession(): boolean {
+  try {
+    localStorage.removeItem(BROWSER_SESSION_KEY);
+  } catch {
+    return false;
+  }
+  return true;
+}
 
 const browserStubs: ElectronAPI = {
   session: {
-    get: async () => null,
-    set: async () => true,
-    clear: async () => true,
+    get: async () => getBrowserSession(),
+    set: async (session) => setBrowserSession(session),
+    clear: async () => clearBrowserSession(),
   },
   settings: {
-    get: async () => ({ kioskMode: false, theme: "dark", notifications: true }),
-    set: async (p) => ({ kioskMode: false, theme: "dark", notifications: true, ...p }),
+    get: async () => ({ kioskMode: false, theme: "light" as const, notifications: true }),
+    set: async (p) => ({ kioskMode: false, theme: "light" as const, notifications: true, ...p }),
   },
   window: {
     minimize: noop,
@@ -167,6 +195,10 @@ const browserStubs: ElectronAPI = {
 };
 
 export function useElectron(): ElectronAPI {
+  return getElectronApi();
+}
+
+export function getElectronApi(): ElectronAPI {
   return isElectron() ? window.electronAPI : browserStubs;
 }
 

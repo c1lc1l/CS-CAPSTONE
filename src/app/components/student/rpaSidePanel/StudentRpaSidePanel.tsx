@@ -31,8 +31,8 @@ export function StudentRpaSidePanel({
 
   return (
     <aside
-      className="flex flex-col border-l border-[#1a2640] min-h-0 min-w-0 max-w-[292px] flex-[0_1_292px] overflow-y-auto overflow-x-hidden py-5 px-4 gap-5"
-      style={{ background: "#0a1120", fontFamily: PANEL_SANS }}
+      className="flex flex-col border-l border-[#dfeaff]/60 min-h-0 min-w-0 max-w-[292px] flex-[0_1_292px] overflow-y-auto overflow-x-hidden py-5 px-4 gap-5"
+      style={{ background: "rgba(255, 255, 255, 0.36)", fontFamily: PANEL_SANS }}
       aria-label="Runa automation and lab context"
     >
       <LabEnvironmentSection

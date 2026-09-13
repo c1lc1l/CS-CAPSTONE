@@ -134,16 +134,16 @@ export function Dashboard() {
 
   return (
     <AdminLabProvider>
-    <div className="flex flex-col h-full min-h-0" style={{ background: "#0d1320", fontFamily: GROTESK }}>
+    <div className="runa-admin-screen flex flex-col h-full min-h-0" style={{ background: "rgba(255,255,255,0.12)", fontFamily: GROTESK }}>
       <header
-        className="flex items-center justify-between px-5 h-14 border-b border-[#1a2640] shrink-0"
-        style={{ background: "#0f1828" }}
+        className="relative z-[100] flex items-center justify-between px-5 h-14 border-b border-[#1a2640] shrink-0"
+        style={{ background: "rgba(255,255,255,0.58)" }}
       >
         <div className="flex items-center gap-5">
           <span className="text-[#7eb5f5]" style={{ fontSize: "16px", fontFamily: BRAND, letterSpacing: "0.12em" }}>
             RUNA
           </span>
-          <div className="flex items-center gap-2 px-3 py-1 rounded-sm border border-[#2a3a55]" style={{ background: "#1a2640" }}>
+          <div className="flex items-center gap-2 px-3 py-1 rounded-sm border border-[#cbd5f0] bg-white/50">
             <Shield size={11} className="text-[#4a6fa5]" />
             <span className="tracking-widest uppercase text-[#4a6fa5]" style={{ fontSize: "9px", fontFamily: MONO }}>
               Admin Session
@@ -154,36 +154,36 @@ export function Dashboard() {
         <div className="flex items-center gap-4">
           <PythonServiceBadge />
           <div
-            className="relative flex items-center gap-2 border border-[#1e2e48] rounded-sm px-3 py-1.5"
-            style={{ background: "#111d30" }}
+            className="relative flex items-center gap-2 border border-[#dbe7ff]/60 rounded-xl px-3 py-1.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.12)]"
+            style={{ background: "rgba(255, 255, 255, 0.54)" }}
           >
             <div>
-              <div className="text-[#4a6080] tracking-widest uppercase" style={{ fontSize: "8px", fontFamily: MONO }}>
+              <div className="text-[#52638f] tracking-widest uppercase" style={{ fontSize: "8px", fontFamily: MONO }}>
                 Admin ID
               </div>
-              <div className="text-[#c5d5ea]" style={{ fontSize: "11px", fontFamily: MONO }}>
+              <div className="text-[#17233d]" style={{ fontSize: "11px", fontFamily: MONO }}>
                 {adminId || "—"}
               </div>
             </div>
             <button
-              className="w-8 h-8 rounded-sm bg-[#3a5a9a] flex items-center justify-center hover:bg-[#4a6ab5] transition-colors"
+              className="w-8 h-8 rounded-full bg-[#4169e1] flex items-center justify-center hover:bg-[#3156b8] transition-all duration-200 ease-out hover:shadow-lg hover:translate-y-[-1px]"
               onClick={() => setShowUserMenu((v) => !v)}
               title="Admin menu"
             >
-              <User size={16} className="text-[#c5d5ea]" />
+              <User size={16} className="text-white" />
             </button>
 
             {showUserMenu && (
               <div
-                className="absolute top-full right-0 mt-2 rounded-sm border border-[#2a3a55] overflow-hidden z-[var(--z-popover)]"
-                style={{ background: "#111d30", minWidth: "160px" }}
+                className="absolute top-full right-0 mt-2 rounded-xl border border-[#dfeaff]/60 overflow-hidden z-[10001] shadow-xl"
+                style={{ background: "rgba(255,255,255,0.92)", minWidth: "160px" }}
               >
-                <div className="px-4 py-3 border-b border-[#1a2640]">
-                  <p className="text-[#c5d5ea]" style={{ fontSize: "11px" }}>{adminDisplayName}</p>
-                  <p className="text-[#4a6080]" style={{ fontSize: "9px", fontFamily: MONO }}>{adminId}</p>
+                <div className="px-4 py-3 border-b border-[#dfeaff]/60">
+                  <p className="text-[#17233d]" style={{ fontSize: "11px" }}>{adminDisplayName}</p>
+                  <p className="text-[#52638f]" style={{ fontSize: "9px", fontFamily: MONO }}>{adminId}</p>
                 </div>
                 <button
-                  className="w-full flex items-center gap-2 px-4 py-3 text-left text-[#e05c6a] hover:bg-[#1e2e48] transition-colors"
+                  className="w-full flex items-center gap-2 px-4 py-3 text-left text-[#c2415e] hover:bg-[#eef2ff] transition-colors"
                   style={{ fontSize: "11px", fontFamily: MONO }}
                   onClick={handleLogout}
                 >
@@ -207,8 +207,8 @@ export function Dashboard() {
 
       <div className="flex flex-1 min-h-0 overflow-hidden">
         <aside
-          className="flex flex-col items-center pt-4 pb-3 gap-1 border-r border-[#1a2640] shrink-0"
-          style={{ width: "88px", background: "#0a1120" }}
+          className="flex flex-col items-center pt-4 pb-3 gap-1 border-r border-white/60 shrink-0"
+          style={{ width: "88px", background: "rgba(255,255,255,0.42)" }}
         >
           {items.map((item) => {
             const isActive = activeNav === item.id;
@@ -218,9 +218,9 @@ export function Dashboard() {
                 onClick={() => setActiveNav(item.id)}
                 className="relative flex flex-col items-center gap-1.5 py-3.5 w-full transition-all"
                 style={{
-                  background: isActive ? "#162035" : "transparent",
-                  borderLeft: isActive ? "2px solid #3a6fff" : "2px solid transparent",
-                  color: isActive ? "#7eb5f5" : "#3a5070",
+                  background: isActive ? "rgba(224,231,255,0.82)" : "transparent",
+                  borderLeft: isActive ? "2px solid #4169e1" : "2px solid transparent",
+                  color: isActive ? "#3156b8" : "#304b86",
                 }}
                 title={item.label}
               >
@@ -233,7 +233,7 @@ export function Dashboard() {
                     {item.badge > 9 ? "9+" : item.badge}
                   </span>
                 )}
-                <span className="tracking-widest" style={{ fontSize: "7px", fontFamily: MONO }}>
+                <span className="tracking-widest font-semibold" style={{ fontSize: "8px", fontFamily: MONO }}>
                   {item.label}
                 </span>
               </button>
@@ -254,7 +254,7 @@ export function Dashboard() {
 
             <aside
               className="flex flex-col border-l border-[#1a2640] shrink-0 py-5 px-4 gap-6 overflow-y-auto min-h-0"
-              style={{ width: "300px", background: "#0a1120" }}
+              style={{ width: "300px", background: "rgba(255,255,255,0.46)" }}
             >
               <SystemHealthWidget
                 onHealthResult={handleHealthResult}
@@ -270,7 +270,7 @@ export function Dashboard() {
                 </span>
                 <div
                   className="flex items-center gap-2 px-3 py-2 rounded-md border border-[#2a3a55]"
-                  style={{ background: "#162035" }}
+                    style={{ background: "rgba(224,231,255,0.72)" }}
                 >
                   <div className="w-2 h-2 rounded-full bg-[#3a6fff]" />
                   <span className="text-[#7eb5f5] tracking-widest uppercase" style={{ fontSize: "10px", fontFamily: MONO }}>
@@ -301,12 +301,12 @@ export function Dashboard() {
 
       <footer
         className="flex items-center justify-between px-5 h-11 border-t border-[#1a2640] shrink-0"
-        style={{ background: "#0f1828" }}
+        style={{ background: "rgba(255,255,255,0.58)" }}
       >
         <div className="flex items-center gap-3 min-w-0">
           <div
             className="hidden sm:flex items-center gap-2 px-2.5 py-1 rounded-md border shrink-0"
-            style={{ background: "#162035", borderColor: "#2a3a55" }}
+            style={{ background: "rgba(224,231,255,0.72)", borderColor: "rgba(99,102,241,0.18)" }}
           >
             <Shield size={11} className="text-[#4ac77e]" />
             <span className="text-[#4ac77e] tracking-widest uppercase" style={{ fontSize: "8px", fontFamily: MONO }}>

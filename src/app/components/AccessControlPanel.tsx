@@ -223,7 +223,7 @@ export function AccessControlPanel() {
   }, [api]);
 
   return (
-    <div className="h-full overflow-y-auto" style={{ background: "#0d1320", fontFamily: GROTESK }}>
+    <div className="runa-admin-view h-full overflow-y-auto" style={{ background: "#0d1320", fontFamily: GROTESK }}>
       {/* Header */}
       <div className="px-7 pt-5 pb-4 border-b border-[#1a2640]" style={{ background: "#0f1828" }}>
         <div className="flex items-center gap-3 mb-1">

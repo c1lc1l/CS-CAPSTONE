@@ -11,14 +11,7 @@
  */
 
 import type { AgentAction, ApprovalRequest, RiskTier } from "./types";
-
-const electronAPI = (typeof window !== "undefined" ? window.electronAPI : undefined);
-
-if (!electronAPI) {
-  // Renderer is rendering outside Electron (browser dev mode). The
-  // useElectron hook supplies stubs; we accept undefined here and
-  // let calls fail loudly so misuse is obvious during dev.
-}
+import { getElectronApi } from "../ipc/useElectron";
 
 export type ProposeResult =
   | {
@@ -38,7 +31,7 @@ export async function proposeAction(
   requesterRole: ElectronRole,
   evidence?: ApprovalRequest["evidence"],
 ): Promise<ProposeResult> {
-  return (await window.electronAPI.agent.propose({
+  return (await getElectronApi().agent.propose({
     action,
     requesterId,
     requesterRole,
@@ -47,12 +40,12 @@ export async function proposeAction(
 }
 
 export async function listPending(): Promise<ApprovalRequest[]> {
-  const list = await window.electronAPI.agent.listPending();
+  const list = await getElectronApi().agent.listPending();
   return list as ApprovalRequest[];
 }
 
 export async function listHistory(limit = 50): Promise<ApprovalRequest[]> {
-  const list = await window.electronAPI.agent.listHistory(limit);
+  const list = await getElectronApi().agent.listHistory(limit);
   return list as ApprovalRequest[];
 }
 
@@ -61,7 +54,7 @@ export async function approveRequest(
   approverUserId: string,
   comment?: string,
 ): Promise<{ request: ApprovalRequest; result: { ok: boolean; message: string } }> {
-  const res = await window.electronAPI.agent.approve({
+  const res = await getElectronApi().agent.approve({
     id,
     approverUserId,
     comment,
@@ -77,7 +70,7 @@ export async function rejectRequest(
   approverUserId: string,
   comment?: string,
 ): Promise<ApprovalRequest> {
-  const req = await window.electronAPI.agent.reject({
+  const req = await getElectronApi().agent.reject({
     id,
     approverUserId,
     comment,
@@ -90,7 +83,7 @@ export async function requestInfo(
   byUserId: string,
   text: string,
 ): Promise<ApprovalRequest> {
-  const req = await window.electronAPI.agent.requestInfo({
+  const req = await getElectronApi().agent.requestInfo({
     id,
     byUserId,
     text,
@@ -115,5 +108,5 @@ export async function logAudit(args: {
   eventDescription?: string;
   threatLevel?: RiskTier;
 }) {
-  return await window.electronAPI.audit.log(args);
+  return await getElectronApi().audit.log(args);
 }

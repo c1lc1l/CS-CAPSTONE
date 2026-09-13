@@ -105,7 +105,15 @@ export default function App() {
   };
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", height: "100vh" }}>
+    <div
+      className="runa-light-app"
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        height: "100vh",
+        background: "linear-gradient(135deg, #4169e1 0%, #7594ea 42%, #eef1fb 100%)",
+      }}
+    >
       <TitleBar />
       <div style={{ flex: 1, overflow: "hidden" }}>
         <NotificationProvider>
@@ -118,7 +126,8 @@ export default function App() {
           style={{
             position: "fixed",
             inset: 0,
-            background: "rgba(8,12,20,0.86)",
+            background: "rgba(30, 48, 104, 0.42)",
+            backdropFilter: "blur(14px)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -130,16 +139,17 @@ export default function App() {
             style={{
               width: "100%",
               maxWidth: "560px",
-              border: "1px solid #2a3a55",
-              background: "#111d30",
-              borderRadius: "10px",
+              border: "1px solid rgba(255, 255, 255, 0.72)",
+              background: "rgba(255, 255, 255, 0.88)",
+              boxShadow: "0 24px 70px rgba(46, 65, 133, 0.24)",
+              borderRadius: "16px",
               padding: "16px",
-              color: "#c5d5ea",
+              color: "#17233d",
               fontFamily: "'Exo 2', sans-serif",
             }}
           >
             <h2 style={{ margin: 0, marginBottom: "8px", fontSize: "16px" }}>Governance Consent</h2>
-            <p style={{ margin: 0, marginBottom: "12px", fontSize: "12px", color: "#8aa0c0" }}>
+            <p style={{ margin: 0, marginBottom: "12px", fontSize: "12px", color: "#66708a" }}>
               RUNA automation is bounded. Medium/high-risk actions require HITL approval and audit evidence.
               Logs are minimized to operational security data only.
             </p>
@@ -147,10 +157,10 @@ export default function App() {
               type="button"
               onClick={() => void acceptConsent()}
               style={{
-                border: "1px solid #3a6fff55",
-                background: "#3a5a9a",
-                color: "#c5d5ea",
-                borderRadius: "6px",
+                border: "1px solid #4169e155",
+                background: "#4169e1",
+                color: "#ffffff",
+                borderRadius: "9px",
                 padding: "8px 12px",
                 cursor: "pointer",
                 fontSize: "12px",

@@ -1,0 +1,589 @@
+.runa-light-app {
+	--runa-blue: #2563eb;
+	--runa-purple: #8b5cf6;
+	--runa-pink: #f472b6;
+	--runa-navy: #0f172a;
+	--runa-lavender: #eef2ff;
+	--runa-ink: #17213a;
+	--runa-muted: #66718a;
+	--runa-glass: rgba(255, 255, 255, 0.78);
+	--runa-border: rgba(99, 102, 241, 0.18);
+	--runa-coral: #f97316;
+	background: linear-gradient(135deg, #2563eb 0%, #8b5cf6 52%, #eef2ff 100%);
+	color: var(--runa-ink);
+	font-family: "Plus Jakarta Sans", sans-serif;
+}
+
+.runa-reference-theme {
+	background: linear-gradient(135deg, #2563eb 0%, #8b5cf6 52%, #eef2ff 100%) !important;
+	color: var(--runa-ink);
+}
+
+.runa-reference-theme [class*="text-[#c5d5ea]"],
+.runa-reference-theme [class*="text-[#7eb5f5]"] {
+	color: #17233d !important;
+}
+
+.runa-reference-theme [class*="text-[#4a6080]"],
+.runa-reference-theme [class*="text-[#4a6fa5]"],
+.runa-reference-theme [class*="text-[#2a3a55]"],
+.runa-reference-theme [class*="text-[#3a5070]"] {
+	color: #66708a !important;
+}
+
+.runa-reference-theme [class*="bg-[#3a5a9a]"],
+.runa-reference-theme [class*="bg-[#2a5080]"] {
+	background: #4169e1 !important;
+	color: #ffffff !important;
+}
+
+.runa-reference-theme [class*="bg-[#0d1320]"],
+.runa-reference-theme [class*="bg-[#0f1828]"],
+.runa-reference-theme [class*="bg-[#111d30]"],
+.runa-reference-theme [class*="bg-[#0f1a2a]"],
+.runa-reference-theme [class*="bg-[#0a1120]"] {
+	background: rgba(255, 255, 255, 0.72) !important;
+}
+
+/* Reference-inspired composition: pale blue atmosphere, glass surfaces, and clear depth. */
+.runa-student-screen,
+.runa-login-screen,
+.runa-admin-screen {
+	position: relative;
+	isolation: isolate;
+	background:
+		radial-gradient(circle at 16% 34%, rgba(255, 166, 188, 0.28), transparent 23%),
+		radial-gradient(circle at 82% 18%, rgba(114, 216, 230, 0.24), transparent 24%),
+		linear-gradient(135deg, #4169e1 0%, #7594ea 43%, #eef1fb 100%) !important;
+	color: #17233d !important;
+	font-family: "Plus Jakarta Sans", sans-serif !important;
+}
+
+.runa-student-screen::before,
+.runa-login-screen::before,
+.runa-admin-screen::before {
+	content: "";
+	position: absolute;
+	inset: 0;
+	z-index: -1;
+	pointer-events: none;
+	opacity: 0.22;
+	background-image: linear-gradient(rgba(255, 255, 255, 0.22) 1px, transparent 1px),
+		linear-gradient(90deg, rgba(255, 255, 255, 0.22) 1px, transparent 1px);
+	background-size: 72px 72px;
+	mask-image: linear-gradient(to bottom, black, transparent 72%);
+}
+
+.runa-student-header {
+	height: 64px !important;
+	padding-inline: 24px !important;
+	background: rgba(255, 255, 255, 0.68) !important;
+	border-color: rgba(255, 255, 255, 0.72) !important;
+	box-shadow: 0 12px 30px rgba(45, 72, 155, 0.12) !important;
+	backdrop-filter: blur(18px);
+}
+
+.runa-student-rail {
+	width: 84px !important;
+	background: rgba(255, 255, 255, 0.5) !important;
+	border-color: rgba(255, 255, 255, 0.72) !important;
+	backdrop-filter: blur(18px);
+}
+
+.runa-student-main {
+	padding-inline: 18px;
+	background: rgba(255, 255, 255, 0.12) !important;
+}
+
+.runa-student-main > div:first-child > div {
+	border-radius: 14px !important;
+	border-color: rgba(255, 255, 255, 0.72) !important;
+	background: rgba(255, 255, 255, 0.58) !important;
+	box-shadow: 0 12px 30px rgba(45, 72, 155, 0.1) !important;
+	backdrop-filter: blur(14px);
+}
+
+.runa-student-screen .runa-student-runtime-card {
+	background: rgba(255, 255, 255, 0.56) !important;
+	border-color: rgba(255, 255, 255, 0.72) !important;
+	box-shadow: 0 10px 26px rgba(45, 72, 155, 0.1);
+}
+
+.runa-student-screen [style*="rgba(17, 29, 48"] {
+	background: rgba(255, 255, 255, 0.62) !important;
+}
+
+.runa-student-screen .absolute.z-\[var\(--z-popover\)\],
+.runa-admin-screen .absolute.z-\[var\(--z-popover\)\] {
+	background: rgba(255, 255, 255, 0.96) !important;
+	border-color: rgba(99, 102, 241, 0.24) !important;
+	box-shadow: 0 18px 36px rgba(38, 55, 126, 0.2) !important;
+	color: var(--runa-ink) !important;
+	z-index: 50 !important;
+}
+
+.runa-student-screen .absolute.z-\[var\(--z-popover\)\] button,
+.runa-admin-screen .absolute.z-\[var\(--z-popover\)\] button {
+	background: transparent !important;
+	color: #c2415e !important;
+}
+
+.runa-student-screen .absolute.z-\[var\(--z-popover\)\] button:hover,
+.runa-admin-screen .absolute.z-\[var\(--z-popover\)\] button:hover {
+	background: rgba(224, 231, 255, 0.82) !important;
+}
+
+.runa-student-main input,
+.runa-student-main textarea,
+.runa-student-main select {
+	border-radius: 9px !important;
+	border-color: rgba(111, 132, 193, 0.26) !important;
+	background: rgba(247, 248, 253, 0.9) !important;
+	color: #17233d !important;
+}
+
+/* Keep the assistant on the same light glass surface as the surrounding student panels. */
+.runa-student-screen .runa-productivity-assistant {
+	background: rgba(255, 255, 255, 0.56) !important;
+	border-color: rgba(255, 255, 255, 0.72) !important;
+	color: #17233d !important;
+}
+
+.runa-student-screen .runa-productivity-assistant [class*="text-[#c5d5ea]"],
+.runa-student-screen .runa-productivity-assistant [class*="text-[#7eb5f5]"],
+.runa-student-screen .runa-productivity-assistant [class*="text-[#e8a83a]"] {
+	color: #17233d !important;
+}
+
+.runa-student-screen .runa-productivity-assistant [class*="text-[#4a6080]"],
+.runa-student-screen .runa-productivity-assistant [class*="text-[#7d8cab]"],
+.runa-student-screen .runa-productivity-assistant [class*="text-[#7f8ca5]"] {
+	color: #52638f !important;
+}
+
+.runa-student-screen .runa-productivity-assistant textarea {
+	background: rgba(247, 248, 253, 0.92) !important;
+	color: #17213a !important;
+}
+
+.runa-student-screen .runa-productivity-assistant button[disabled] {
+	background: rgba(65, 105, 225, 0.2) !important;
+	color: #52638f !important;
+}
+
+.runa-student-main button,
+.runa-student-rail button {
+	border-radius: 9px;
+}
+
+.runa-login-screen {
+	padding: 18px;
+	background:
+		radial-gradient(circle at 12% 78%, rgba(244, 114, 182, 0.16), transparent 30%),
+		radial-gradient(circle at 92% 10%, rgba(139, 92, 246, 0.14), transparent 28%),
+		linear-gradient(135deg, #eef2ff 0%, #e4e9ff 58%, #fce7f3 100%) !important;
+}
+
+.runa-login-screen .runa-login-card [style*="#0f1828"],
+.runa-login-screen .runa-login-card [style*="#0f1a2a"],
+.runa-login-screen .runa-login-card [style*="#131e30"] {
+	background: rgba(255, 255, 255, 0.78) !important;
+}
+
+.runa-login-screen .runa-login-card [style*="#0f1a2a"] {
+	background: rgba(247, 248, 253, 0.94) !important;
+	border-color: rgba(99, 102, 241, 0.18) !important;
+	color: #17233d !important;
+}
+
+.runa-login-content {
+	padding-block: 32px !important;
+}
+
+.runa-login-watermark {
+	display: none !important;
+}
+
+.runa-login-layout {
+	max-width: 860px !important;
+	gap: 64px !important;
+}
+
+.runa-login-brand {
+	max-width: 430px;
+	padding: 12px 0;
+}
+
+.runa-login-brand > p:first-child {
+	color: #6474a2 !important;
+	font-size: 10px !important;
+	letter-spacing: 0.16em !important;
+}
+
+.runa-login-brand h1 {
+	color: #17213a !important;
+	font-size: clamp(44px, 6vw, 72px) !important;
+	letter-spacing: 0.02em !important;
+	margin-bottom: 10px !important;
+}
+
+.runa-login-brand .w-16 {
+	background: #8b5cf6 !important;
+	height: 3px !important;
+	margin-bottom: 14px !important;
+}
+
+.runa-login-brand > p:not(:first-child) {
+	color: #52638f !important;
+	font-size: 13px !important;
+}
+
+.runa-login-card {
+	width: 360px !important;
+	border-radius: 14px !important;
+	border-color: rgba(99, 102, 241, 0.16) !important;
+	background: rgba(255, 255, 255, 0.82) !important;
+	box-shadow: 0 20px 50px rgba(65, 78, 160, 0.16) !important;
+	backdrop-filter: blur(18px);
+}
+
+.runa-login-card > .flex {
+	border-color: rgba(99, 102, 241, 0.12) !important;
+}
+
+.runa-login-card input {
+	background: rgba(247, 248, 253, 0.94) !important;
+	border-color: rgba(99, 102, 241, 0.18) !important;
+	color: #17213a !important;
+}
+
+.runa-login-card form > button[type="submit"] {
+	background: #2563eb !important;
+	color: #ffffff !important;
+	box-shadow: 0 8px 18px rgba(37, 99, 235, 0.2) !important;
+}
+
+.runa-login-card form > button[type="button"] {
+	background: rgba(238, 242, 255, 0.86) !important;
+	border-color: rgba(99, 102, 241, 0.18) !important;
+	color: #52638f !important;
+}
+
+.runa-login-card {
+	border-radius: 20px !important;
+	border-color: rgba(255, 255, 255, 0.82) !important;
+	background: rgba(255, 255, 255, 0.78) !important;
+	box-shadow: 0 24px 70px rgba(46, 65, 133, 0.2) !important;
+	backdrop-filter: blur(18px);
+}
+
+.runa-login-card input {
+	border-radius: 10px !important;
+	background: rgba(247, 248, 253, 0.88) !important;
+	color: #17233d !important;
+}
+
+.runa-login-card form > button[type="submit"] {
+	min-height: 46px;
+	border-radius: 11px !important;
+	background: #4169e1 !important;
+	color: #ffffff !important;
+	box-shadow: 0 8px 18px rgba(65, 105, 225, 0.24);
+}
+
+.runa-login-card .runa-login-admin-tab-active {
+	background: #fff7ed !important;
+	border-bottom-color: #f97316 !important;
+	color: #c2410c !important;
+}
+
+.runa-login-card .runa-login-student-tab-active {
+	background: #eef2ff !important;
+	border-bottom-color: #4169e1 !important;
+	color: #3156b8 !important;
+}
+
+.runa-login-card .runa-login-admin-submit {
+	background: #f97316 !important;
+	color: #ffffff !important;
+	box-shadow: 0 8px 18px rgba(249, 115, 22, 0.2) !important;
+}
+
+.runa-admin-screen {
+	overflow: auto;
+}
+
+/* Apply the reference system to the admin shell without changing its layout. */
+.runa-admin-screen {
+	font-family: "Plus Jakarta Sans", sans-serif !important;
+	background:
+		radial-gradient(circle at 88% 8%, rgba(244, 114, 182, 0.2), transparent 23%),
+		radial-gradient(circle at 10% 78%, rgba(139, 92, 246, 0.2), transparent 25%),
+		linear-gradient(135deg, #2563eb 0%, #8b5cf6 48%, #eef2ff 100%) !important;
+	color: var(--runa-ink) !important;
+}
+
+.runa-admin-screen > header,
+.runa-admin-screen > footer,
+.runa-admin-screen main,
+.runa-admin-screen main > div,
+.runa-admin-screen aside {
+	border-color: rgba(255, 255, 255, 0.7) !important;
+}
+
+.runa-admin-screen > header,
+.runa-admin-screen > footer,
+.runa-admin-screen main > div > aside {
+	background: rgba(255, 255, 255, 0.68) !important;
+	backdrop-filter: blur(18px);
+}
+
+.runa-admin-screen > header {
+	box-shadow: 0 8px 24px rgba(54, 76, 160, 0.12);
+}
+
+.runa-admin-screen > div > aside:first-child {
+	background: rgba(255, 255, 255, 0.5) !important;
+	backdrop-filter: blur(18px);
+}
+
+.runa-admin-screen [style*="#111d30"],
+.runa-admin-screen [style*="#0f1828"],
+.runa-admin-screen [style*="#1a2640"],
+.runa-admin-screen [style*="#162035"],
+.runa-admin-screen [style*="#0d1320"] {
+	background: rgba(255, 255, 255, 0.74) !important;
+	border-color: rgba(99, 102, 241, 0.18) !important;
+	box-shadow: 0 10px 28px rgba(50, 67, 135, 0.1);
+}
+
+.runa-admin-screen input,
+.runa-admin-screen textarea,
+.runa-admin-screen select {
+	background: rgba(247, 248, 253, 0.9) !important;
+	border-color: rgba(99, 102, 241, 0.22) !important;
+	color: var(--runa-ink) !important;
+	border-radius: 9px !important;
+}
+
+.runa-admin-screen button[style*="#3a6fff"],
+.runa-admin-screen button[class*="bg-[#3a6fff]"] {
+	background: var(--runa-blue) !important;
+	color: #ffffff !important;
+	box-shadow: 0 7px 16px rgba(37, 99, 235, 0.22);
+}
+
+.runa-admin-screen [class*="text-[#c5d5ea]"],
+.runa-admin-screen [class*="text-[#7eb5f5]"],
+.runa-admin-screen [style*="#c5d5ea"],
+.runa-admin-screen [style*="#7eb5f5"] {
+	color: var(--runa-ink) !important;
+}
+
+.runa-admin-screen [class*="text-[#4a6080]"],
+.runa-admin-screen [class*="text-[#4a6fa5]"],
+.runa-admin-screen [class*="text-[#3a5070]"],
+.runa-admin-screen [style*="#4a6080"],
+.runa-admin-screen [style*="#4a6fa5"] {
+	color: #526b9f !important;
+}
+
+.runa-admin-screen [class*="text-[#6474a2]"],
+.runa-admin-screen [class*="text-[#52638f]"],
+.runa-admin-view [class*="text-[#6474a2]"],
+.runa-admin-view [class*="text-[#52638f]"],
+.runa-admin-view [style*="#4a6080"],
+.runa-admin-view [style*="#4a6fa5"] {
+	color: #526b9f !important;
+}
+
+.runa-login-screen [class*="text-[#4a6080]"],
+.runa-login-screen [class*="text-[#4a6fa5]"],
+.runa-login-screen [class*="text-[#2a3a55]"],
+.runa-admin-screen [class*="text-[#2a3a55]"],
+.runa-admin-screen [class*="text-[#3a5070]"],
+.runa-admin-screen [style*="#2a3a55"] {
+	color: #52638f !important;
+}
+
+.runa-login-screen [class*="text-[#c5d5ea]"],
+.runa-login-screen [class*="text-[#7eb5f5]"],
+.runa-admin-screen [class*="text-[#c5d5ea]"],
+.runa-admin-screen [class*="text-[#7eb5f5]"] {
+	color: #243052 !important;
+}
+
+.runa-admin-screen [class*="bg-[#162035]"],
+.runa-admin-screen [class*="bg-[#1a2640]"],
+.runa-admin-screen [class*="hover:bg-[#1e2e48]"] {
+	background: rgba(224, 231, 255, 0.78) !important;
+}
+
+.runa-admin-screen > div,
+.runa-admin-screen section {
+	border-color: rgba(255, 255, 255, 0.72) !important;
+}
+
+.runa-admin-view {
+	background: rgba(238, 242, 255, 0.3) !important;
+	color: #243052 !important;
+}
+
+.runa-admin-view > div {
+	background: rgba(255, 255, 255, 0.58) !important;
+	border-color: rgba(99, 102, 241, 0.16) !important;
+}
+
+.runa-admin-view [style*="#0d1320"],
+.runa-admin-view [style*="#0f1828"],
+.runa-admin-view [style*="#101a2c"],
+.runa-admin-view [style*="#111d30"],
+.runa-admin-view [style*="#1a2640"],
+.runa-admin-view [style*="#162035"] {
+	background: rgba(255, 255, 255, 0.72) !important;
+	border-color: rgba(99, 102, 241, 0.16) !important;
+	box-shadow: 0 8px 24px rgba(54, 76, 160, 0.08);
+}
+
+.runa-admin-view [class*="text-[#c5d5ea]"],
+.runa-admin-view [class*="text-[#7eb5f5]"],
+.runa-admin-view [style*="#c5d5ea"],
+.runa-admin-view [style*="#7eb5f5"] {
+	color: #243052 !important;
+}
+
+.runa-admin-view [class*="text-[#4a6080]"],
+.runa-admin-view [class*="text-[#4a6fa5]"],
+.runa-admin-view [class*="text-[#3a5070]"],
+.runa-admin-view [style*="#4a6080"],
+.runa-admin-view [style*="#4a6fa5"] {
+	color: #526b9f !important;
+}
+
+.runa-admin-view input,
+.runa-admin-view textarea,
+.runa-admin-view select {
+	background: rgba(247, 248, 253, 0.92) !important;
+	color: #243052 !important;
+	border-color: rgba(99, 102, 241, 0.2) !important;
+}
+
+.runa-admin-screen .runa-admin-search-field,
+.runa-admin-view .runa-admin-search-field {
+	background: rgba(247, 248, 253, 0.94) !important;
+	border-color: rgba(99, 102, 241, 0.2) !important;
+	box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
+}
+
+.runa-admin-search-field input {
+	background: transparent !important;
+	color: #17233d !important;
+}
+
+@media (max-width: 760px) {
+	.runa-login-screen {
+		padding: 16px;
+	}
+
+	.runa-student-header {
+		padding-inline: 14px !important;
+	}
+
+	.runa-student-main {
+		padding-inline: 10px;
+	}
+}
+
+/* Shared glass theme override to match the login screen across all app sections. */
+.runa-student-screen,
+.runa-admin-screen {
+	background:
+		radial-gradient(circle at 16% 30%, rgba(255, 166, 188, 0.24), transparent 18%),
+		radial-gradient(circle at 80% 12%, rgba(114, 216, 230, 0.18), transparent 22%),
+		linear-gradient(135deg, #4169e1 0%, #7594ea 42%, #eef1fb 100%) !important;
+	color: #17233d !important;
+}
+
+.runa-login-screen {
+	background:
+		radial-gradient(circle at 12% 78%, rgba(244, 114, 182, 0.16), transparent 30%),
+		radial-gradient(circle at 92% 10%, rgba(139, 92, 246, 0.14), transparent 28%),
+		linear-gradient(135deg, #eef2ff 0%, #e4e9ff 58%, #fce7f3 100%) !important;
+	color: #17233d !important;
+}
+
+.runa-student-screen [style*="#0d1320"],
+.runa-student-screen [style*="#0f1828"],
+.runa-student-screen [style*="#111d30"],
+.runa-student-screen [style*="#0f1a2a"],
+.runa-student-screen [style*="#131e30"],
+.runa-student-screen [style*="#0d1626"],
+.runa-admin-screen [style*="#0d1320"],
+.runa-admin-screen [style*="#0f1828"],
+.runa-admin-screen [style*="#111d30"],
+.runa-admin-screen [style*="#1a2640"],
+.runa-admin-screen [style*="#162035"],
+.runa-admin-view [style*="#0d1320"],
+.runa-admin-view [style*="#0f1828"],
+.runa-admin-view [style*="#111d30"],
+.runa-admin-view [style*="#1a2640"],
+.runa-admin-view [style*="#162035"] {
+	background: rgba(255, 255, 255, 0.74) !important;
+	border-color: rgba(99, 102, 241, 0.18) !important;
+	box-shadow: 0 10px 26px rgba(45, 72, 155, 0.12) !important;
+}
+
+.runa-student-screen [class*="text-[#c5d5ea]"],
+.runa-student-screen [class*="text-[#7eb5f5]"],
+.runa-student-screen [style*="#c5d5ea"],
+.runa-student-screen [style*="#7eb5f5"],
+.runa-admin-screen [class*="text-[#c5d5ea]"],
+.runa-admin-screen [class*="text-[#7eb5f5]"],
+.runa-admin-screen [style*="#c5d5ea"],
+.runa-admin-screen [style*="#7eb5f5"],
+.runa-admin-view [class*="text-[#c5d5ea]"],
+.runa-admin-view [class*="text-[#7eb5f5]"] {
+	color: #17233d !important;
+}
+
+.runa-student-screen [class*="text-[#4a6080]"],
+.runa-student-screen [class*="text-[#4a6fa5]"],
+.runa-student-screen [class*="text-[#2a3a55]"],
+.runa-admin-screen [class*="text-[#4a6080]"],
+.runa-admin-screen [class*="text-[#4a6fa5]"],
+.runa-admin-screen [class*="text-[#3a5070]"],
+.runa-admin-view [class*="text-[#4a6080]"],
+.runa-admin-view [class*="text-[#4a6fa5]"] {
+	color: #52638f !important;
+}
+
+.runa-student-screen input,
+.runa-student-screen textarea,
+.runa-student-screen select,
+.runa-admin-screen input,
+.runa-admin-screen textarea,
+.runa-admin-screen select,
+.runa-admin-view input,
+.runa-admin-view textarea,
+.runa-admin-view select {
+	background: rgba(247, 248, 253, 0.92) !important;
+	border-color: rgba(99, 102, 241, 0.2) !important;
+	color: #17233d !important;
+}
+
+.runa-student-screen button[style*="#3a5a9a"],
+.runa-student-screen button[class*="bg-[#3a5a9a]"],
+.runa-admin-screen button[style*="#3a6fff"],
+.runa-admin-screen button[class*="bg-[#3a6fff]"] {
+	background: linear-gradient(180deg, #4f73db 0%, #4169e1 100%) !important;
+	color: #ffffff !important;
+	box-shadow: 0 8px 18px rgba(65, 105, 225, 0.22);
+}
+
+.runa-student-screen .absolute.z-\[var\(--z-popover\)\],
+.runa-admin-screen .absolute.z-\[var\(--z-popover\)\] {
+	background: rgba(255, 255, 255, 0.96) !important;
+	border-color: rgba(99, 102, 241, 0.2) !important;
+	box-shadow: 0 18px 36px rgba(38, 55, 126, 0.18) !important;
+	color: #17233d !important;
+}

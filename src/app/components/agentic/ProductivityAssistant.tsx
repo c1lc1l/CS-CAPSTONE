@@ -608,17 +608,17 @@ export const ProductivityAssistant = forwardRef<ProductivityAssistantHandle, Pro
 
   return (
     <div
-      className="flex flex-col rounded-sm border border-[#1e2e48] overflow-hidden"
+      className="runa-productivity-assistant flex flex-col rounded-sm border border-[#dfeaff]/60 overflow-hidden"
       style={{
-        background: "#0f1828",
+        background: "rgba(255, 255, 255, 0.56)",
         height: height ?? "100%",
         fontFamily: GROTESK,
       }}
     >
       {/* Header */}
       <div
-        className="flex items-center justify-between px-4 py-2.5 border-b border-[#1e2e48]"
-        style={{ background: "#111d30" }}
+        className="flex items-center justify-between px-4 py-2.5 border-b border-[#dfeaff]/60"
+        style={{ background: "rgba(255, 255, 255, 0.48)" }}
       >
         <div className="flex items-center gap-2">
           <Bot size={14} className="text-[#7eb5f5]" />
@@ -639,8 +639,8 @@ export const ProductivityAssistant = forwardRef<ProductivityAssistantHandle, Pro
 
       {/* Scope statement */}
       <div
-        className="px-4 py-2 border-b border-[#1a2640]"
-        style={{ background: "#0d1626" }}
+        className="px-4 py-2 border-b border-[#dfeaff]/60"
+        style={{ background: "rgba(238, 242, 255, 0.38)" }}
       >
         <div
           className="flex items-start gap-2 text-[#4a6080]"
@@ -662,7 +662,7 @@ export const ProductivityAssistant = forwardRef<ProductivityAssistantHandle, Pro
       <div
         ref={scrollRef}
         className="flex-1 overflow-y-auto px-4 py-3 space-y-3"
-        style={{ background: "#0f1828" }}
+        style={{ background: "rgba(255, 255, 255, 0.26)" }}
       >
         {messages.map((m) => (
           <div
@@ -672,8 +672,8 @@ export const ProductivityAssistant = forwardRef<ProductivityAssistantHandle, Pro
             <div
               className="max-w-[85%] rounded-sm border px-3 py-2"
               style={{
-                background: m.from === "user" ? "#1a2a44" : "#111d30",
-                borderColor: m.from === "user" ? "#3a5a9a" : "#1e2e48",
+                background: m.from === "user" ? "rgba(119, 141, 255, 0.18)" : "rgba(255,255,255,0.62)",
+                borderColor: m.from === "user" ? "rgba(85,105,199,0.28)" : "rgba(99,102,241,0.18)",
               }}
             >
               <div className="flex items-center gap-2 mb-1">
@@ -726,8 +726,8 @@ export const ProductivityAssistant = forwardRef<ProductivityAssistantHandle, Pro
         {busy && (
           <div className="flex justify-start">
             <div
-              className="rounded-sm border border-[#1e2e48] px-3 py-2"
-              style={{ background: "#111d30" }}
+              className="rounded-sm border border-[#dfeaff]/60 px-3 py-2"
+              style={{ background: "rgba(255,255,255,0.5)" }}
             >
               <span
                 className="text-[#4a6080] tracking-widest uppercase"
@@ -743,8 +743,8 @@ export const ProductivityAssistant = forwardRef<ProductivityAssistantHandle, Pro
 
       {/* Input */}
       <div
-        className="border-t border-[#1e2e48] p-3 flex items-end gap-2"
-        style={{ background: "#0d1626" }}
+        className="border-t border-[#dfeaff]/60 p-3 flex items-end gap-2"
+        style={{ background: "rgba(255,255,255,0.28)" }}
       >
         <textarea
           ref={textareaRef}
@@ -758,21 +758,31 @@ export const ProductivityAssistant = forwardRef<ProductivityAssistantHandle, Pro
           }
           rows={2}
           disabled={busy}
-          className="flex-1 rounded-sm px-3 py-2 text-[#c5d5ea] placeholder-[#2e4060] border outline-none resize-none"
+          className="flex-1 rounded-xl px-3 py-2.5 text-[#17233d] placeholder:text-[#66718a] placeholder:italic border outline-none resize-none transition-all duration-200 ease-out shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]"
           style={{
-            background: "#0f1a2a",
-            borderColor: "#1e2e48",
+            background: "rgba(255,255,255,0.72)",
+            borderColor: "rgba(99,102,241,0.18)",
+            boxShadow: "0 0 0 1px rgba(122, 143, 214, 0.12), inset 0 1px 0 rgba(255,255,255,0.12)",
             fontSize: "12px",
             fontFamily: MONO,
+          }}
+          onFocus={(e) => {
+            e.currentTarget.style.borderColor = "rgba(102, 142, 255, 0.7)";
+            e.currentTarget.style.boxShadow = "0 0 0 3px rgba(90, 126, 255, 0.18), inset 0 1px 0 rgba(255,255,255,0.04)";
+          }}
+          onBlur={(e) => {
+            e.currentTarget.style.borderColor = "rgba(130, 153, 214, 0.28)";
+            e.currentTarget.style.boxShadow = "0 0 0 1px rgba(122, 143, 214, 0.15), inset 0 1px 0 rgba(255,255,255,0.04)";
           }}
         />
         <button
           onClick={send}
           disabled={busy || !input.trim()}
-          className="flex items-center gap-1.5 px-4 py-2 rounded-sm tracking-widest uppercase disabled:opacity-40 disabled:cursor-not-allowed transition-opacity hover:opacity-90"
+          className="flex items-center gap-1.5 px-4 py-2 rounded-xl tracking-widest uppercase transition-all duration-200 ease-out disabled:cursor-not-allowed hover:translate-y-[-1px] hover:shadow-lg"
           style={{
-            background: "#3a5a9a",
-            color: "#c5d5ea",
+            background: busy || !input.trim() ? "#d5def1" : "linear-gradient(180deg, #5b7fe3 0%, #4169e1 100%)",
+            color: busy || !input.trim() ? "#526b9f" : "#ffffff",
+            boxShadow: busy || !input.trim() ? "none" : "0 8px 20px rgba(58, 90, 154, 0.28)",
             fontSize: "10px",
             fontFamily: MONO,
           }}

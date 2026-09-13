@@ -31,24 +31,24 @@ interface TierStyle {
 const TIER_STYLES: Record<RiskTier, TierStyle> = {
   low: {
     label: "LOW",
-    border: "#1e7a3e",
-    dot: "#28b85f",
-    text: "#7be39e",
-    bg: "#0d2418",
+    border: "#34a86b",
+    dot: "#16a05d",
+    text: "#15803d",
+    bg: "rgba(220, 252, 231, 0.9)",
   },
   medium: {
     label: "MED",
     border: "#a06820",
     dot: "#e8a83a",
     text: "#f0c66e",
-    bg: "#241a08",
+    bg: "rgba(138, 95, 22, 0.22)",
   },
   high: {
     label: "HIGH",
     border: "#a02a2a",
     dot: "#e05c6a",
     text: "#ffb1ba",
-    bg: "#2a0c10",
+    bg: "rgba(133, 37, 45, 0.22)",
   },
 };
 
@@ -77,10 +77,11 @@ export function RiskBadge({ tier, reason, compact = false }: RiskBadgeProps) {
     <span
       title={reason}
       aria-label={ariaLabel}
-      className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-sm border tracking-widest uppercase"
+      className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full border tracking-widest uppercase shadow-sm"
       style={{
         borderColor: s.border,
         background: s.bg,
+        boxShadow: `inset 0 0 0 1px ${s.border}22, 0 0 12px ${s.border}20`,
         color: s.text,
         fontSize: "9px",
         fontFamily: MONO,
@@ -93,7 +94,7 @@ export function RiskBadge({ tier, reason, compact = false }: RiskBadgeProps) {
           height: 6,
           borderRadius: "50%",
           background: s.dot,
-          boxShadow: `0 0 3px ${s.dot}`,
+          boxShadow: `0 0 6px ${s.dot}cc`,
         }}
       />
       <span>RISK · {s.label}</span>

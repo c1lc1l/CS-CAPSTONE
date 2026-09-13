@@ -378,10 +378,16 @@ export function StudentDashboard() {
   const sessionRemainingLabel = formatSessionRemaining(sessionExpiresAt, now.getTime());
 
   return (
-    <div className="flex flex-col h-full min-h-0" style={{ background: "#0d1320", fontFamily: GROTESK }}>
+    <div
+      className="runa-reference-theme runa-student-screen flex flex-col h-full min-h-0"
+      style={{
+        background: "linear-gradient(135deg, #4169e1 0%, #7594ea 43%, #eef1fb 100%)",
+        fontFamily: GROTESK,
+      }}
+    >
       <header
-        className="flex items-center justify-between px-5 h-14 border-b border-[#1a2640] shrink-0"
-        style={{ background: "#0f1828" }}
+        className="runa-student-header flex items-center justify-between px-5 h-14 border-b border-[#dfeaff]/60 shrink-0 backdrop-blur-xl"
+        style={{ background: "rgba(255, 255, 255, 0.72)", boxShadow: "0 12px 30px rgba(45, 72, 155, 0.12)" }}
       >
         <div className="flex items-center gap-5 min-w-0">
           <span className="text-[#7eb5f5] shrink-0" style={{ fontSize: "16px", fontFamily: BRAND, letterSpacing: "0.12em" }}>
@@ -391,7 +397,7 @@ export function StudentDashboard() {
           <span className="text-[#c5d5ea] truncate" style={{ fontSize: "10px", fontFamily: MONO, letterSpacing: "0.12em" }}>
             LAB SESSION
           </span>
-          <div className="flex items-center gap-2 px-3 py-1 rounded-sm border border-[#2a3a55] shrink-0" style={{ background: "#1a2640" }}>
+          <div className="flex items-center gap-2 px-3 py-1 rounded-full border border-[#8ab0ff24] shrink-0" style={{ background: "rgba(110, 143, 214, 0.12)" }}>
             <Shield size={11} className="text-[#4a6fa5]" />
             <span className="tracking-widest uppercase text-[#4a6fa5]" style={{ fontSize: "9px", fontFamily: MONO }}>
               Student
@@ -400,7 +406,7 @@ export function StudentDashboard() {
         </div>
 
         <div className="flex items-center gap-4 shrink-0">
-          <div className="text-right">
+          <div className="runa-student-elapsed-time text-right px-3 py-1.5" style={{ background: "transparent" }}>
             <div className="text-[#4a6080] tracking-widest uppercase" style={{ fontSize: "8px", fontFamily: MONO }}>
               Elapsed Time
             </div>
@@ -410,8 +416,8 @@ export function StudentDashboard() {
           </div>
 
           <div
-            className="relative flex items-center gap-2 border border-[#1e2e48] rounded-sm px-3 py-1.5"
-            style={{ background: "#111d30" }}
+            className="relative flex items-center gap-2 border border-[#dbe7ff]/60 rounded-xl px-3 py-1.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.12)]"
+            style={{ background: "rgba(255, 255, 255, 0.54)" }}
           >
             <div>
               <div className="text-[#4a6080] tracking-widest uppercase" style={{ fontSize: "8px", fontFamily: MONO }}>
@@ -423,20 +429,20 @@ export function StudentDashboard() {
             </div>
             <button
               type="button"
-              className="w-8 h-8 rounded-sm bg-[#3a5a9a] flex items-center justify-center hover:bg-[#4a6ab5] transition-colors"
+              className="w-8 h-8 rounded-full bg-[#3a5a9a] flex items-center justify-center hover:bg-[#4a6ab5] transition-all duration-200 ease-out hover:shadow-lg hover:translate-y-[-1px]"
               onClick={() => setShowUserMenu((v) => !v)}
               title="User menu"
             >
-              <User size={16} className="text-[#c5d5ea]" />
+              <User size={16} className="text-white" />
             </button>
             {showUserMenu && (
               <div
-                className="absolute top-full right-0 mt-2 rounded-sm border border-[#2a3a55] overflow-hidden z-[var(--z-popover)]"
-                style={{ background: "#111d30", minWidth: "160px" }}
+                className="absolute top-full right-0 mt-2 rounded-xl border border-[#dfeaff]/60 overflow-hidden z-[var(--z-popover)] shadow-xl"
+                style={{ background: "rgba(255,255,255,0.9)", minWidth: "160px" }}
               >
-                <div className="px-4 py-3 border-b border-[#1a2640]">
-                  <p className="text-[#c5d5ea]" style={{ fontSize: "11px" }}>{studentDisplayName}</p>
-                  <p className="text-[#4a6080]" style={{ fontSize: "9px", fontFamily: MONO }}>{studentId}</p>
+                <div className="px-4 py-3 border-b border-[#dfeaff]/60">
+                  <p className="text-[#17233d]" style={{ fontSize: "11px" }}>{studentDisplayName}</p>
+                  <p className="text-[#52638f]" style={{ fontSize: "9px", fontFamily: MONO }}>{studentId}</p>
                 </div>
                 <button
                   type="button"
@@ -463,18 +469,20 @@ export function StudentDashboard() {
 
       <div className="flex flex-1 min-h-0 min-w-0 overflow-x-auto overflow-y-hidden">
         <aside
-          className="flex flex-col items-stretch border-r border-[#1a2640] shrink-0 min-h-0"
-          style={{ width: "76px", background: "#0a1120" }}
+          className="runa-student-rail flex flex-col items-stretch border-r border-[#dfeaff]/60 shrink-0 min-h-0 backdrop-blur-xl"
+          style={{ width: "76px", background: "rgba(255, 255, 255, 0.48)" }}
         >
-          <div className="flex flex-col items-center gap-1 px-1 pt-4 pb-3 border-b border-[#1a2640] w-full shrink-0">
-            <Sparkles size={18} className="text-[#7eb5f5]" />
-            <span className="text-[#4a6080] text-center leading-tight" style={{ fontSize: "7px", fontFamily: MONO }}>
+          <div className="flex flex-col items-center justify-center gap-2 px-1 pt-4 pb-3 border-b border-[#dfeaff]/20 w-full shrink-0">
+            <div className="flex h-9 w-9 items-center justify-center rounded-2xl border border-[#ffffff]/70 bg-white/70 text-[#4169e1] shadow-[0_10px_24px_rgba(67,106,190,0.18)]">
+              <Sparkles size={18} />
+            </div>
+            <span className="text-[#526b9f] text-center leading-tight font-semibold" style={{ fontSize: "8px", fontFamily: MONO, letterSpacing: "0.08em" }}>
               RUNA AGENT
             </span>
           </div>
           <div className="flex-1 min-h-0 overflow-y-auto flex flex-col items-center gap-2 py-2 px-0">
             {shortcutsList.length === 0 && (
-              <div className="px-1 text-center text-[#3a5070]" style={{ fontSize: "7px", fontFamily: MONO }}>
+              <div className="px-1 text-center text-[#5d7298] leading-relaxed" style={{ fontSize: "7px", fontFamily: MONO }}>
                 {canEditShortcuts ? "Tap + below to add" : "No launchers"}
               </div>
             )}
@@ -485,7 +493,7 @@ export function StudentDashboard() {
                 title={`${sc.label} — click to launch · right-click for menu`}
                 onClick={() => void launchApp(sc)}
                 onContextMenu={(e) => openShortcutContextMenu(e, sc)}
-                className="flex flex-col items-center gap-1 py-2.5 w-full transition-all rounded-sm hover:bg-[#162035] text-[#7eb5f5]"
+                className="flex flex-col items-center gap-1 py-2.5 w-full transition-all duration-200 ease-out rounded-xl hover:bg-[#162035] hover:shadow-[0_8px_20px_rgba(58,90,154,0.16)] text-[#7eb5f5]"
               >
                 <AppWindow size={20} className="opacity-90" />
                 <span
@@ -498,7 +506,7 @@ export function StudentDashboard() {
             ))}
           </div>
           {canEditShortcuts && (
-            <div className="shrink-0 border-t border-[#1a2640] p-2 flex justify-center">
+            <div className="shrink-0 border-t border-[#dfeaff]/20 p-2 flex justify-center">
               <button
                 type="button"
                 title="Create shortcut"
@@ -507,8 +515,8 @@ export function StudentDashboard() {
                   setDraftPath("");
                   setShowCreateShortcutModal(true);
                 }}
-                className="w-11 h-11 rounded-sm flex items-center justify-center border border-[#3a6fff55] text-[#7eb5f5] hover:bg-[#1e3055] transition-colors"
-                style={{ background: "#111d30" }}
+                className="w-11 h-11 rounded-full flex items-center justify-center border border-[#ffffff]/75 text-[#4169e1] hover:bg-white/85 transition-all duration-200 ease-out shadow-[0_12px_24px_rgba(52,88,177,0.22)] hover:translate-y-[-1px]"
+                style={{ background: "rgba(255, 255, 255, 0.72)" }}
               >
                 <Plus size={22} strokeWidth={2} />
               </button>
@@ -516,13 +524,13 @@ export function StudentDashboard() {
           )}
         </aside>
 
-        <main className="flex-1 min-h-0 min-w-0 flex flex-col overflow-hidden relative">
+        <main className="runa-student-main flex-1 min-h-0 min-w-0 flex flex-col overflow-hidden relative">
           <div className="shrink-0 px-4 pt-4 pb-2">
             <div
-              className="rounded-md border px-3 py-2"
-              style={{ background: "#111d30", borderColor: "#1e2e48" }}
+              className="rounded-2xl border px-4 py-3.5 shadow-[0_12px_24px_rgba(45,72,155,0.10)]"
+              style={{ background: "rgba(255, 255, 255, 0.62)", borderColor: "rgba(99, 102, 241, 0.18)" }}
             >
-              <div className="flex items-center gap-2 mb-1">
+              <div className="flex items-center gap-2 mb-2">
                 <Shield size={12} className="text-[#e8821a]" />
                 <span className="text-[#c5d5ea]" style={{ fontSize: "10px", fontFamily: MONO }}>
                   Website policy check (student feedback)
@@ -533,21 +541,36 @@ export function StudentDashboard() {
                   value={siteCheckInput}
                   onChange={(e) => setSiteCheckInput(e.target.value)}
                   placeholder="Try URL e.g. example.com"
-                  className="flex-1 rounded-sm px-2 py-1.5 border outline-none"
+                  className="flex-1 rounded-xl px-3 py-2.5 border outline-none transition-all duration-200 ease-out placeholder:text-[#7d8cab] placeholder:italic"
                   style={{
-                    background: "#0f1a2a",
-                    borderColor: "#1e2e48",
+                    background: "rgba(15, 26, 42, 0.96)",
+                    borderColor: "rgba(130, 153, 214, 0.28)",
                     color: "#c5d5ea",
+                    boxShadow: "0 0 0 1px rgba(122, 143, 214, 0.15), inset 0 1px 0 rgba(255,255,255,0.04)",
                     fontSize: "11px",
                     fontFamily: MONO,
+                  }}
+                  onFocus={(e) => {
+                    e.currentTarget.style.borderColor = "rgba(102, 142, 255, 0.7)";
+                    e.currentTarget.style.boxShadow = "0 0 0 3px rgba(90, 126, 255, 0.18), inset 0 1px 0 rgba(255,255,255,0.04)";
+                  }}
+                  onBlur={(e) => {
+                    e.currentTarget.style.borderColor = "rgba(130, 153, 214, 0.28)";
+                    e.currentTarget.style.boxShadow = "0 0 0 1px rgba(122, 143, 214, 0.15), inset 0 1px 0 rgba(255,255,255,0.04)";
                   }}
                 />
                 <button
                   type="button"
                   onClick={() => void runSiteCheck()}
                   disabled={siteCheckBusy || !siteCheckInput.trim()}
-                  className="px-3 py-1.5 rounded-sm disabled:opacity-50"
-                  style={{ background: "#3a5a9a", color: "#c5d5ea", fontSize: "10px", fontFamily: MONO }}
+                  className="px-3 py-2 rounded-xl tracking-widest uppercase transition-all duration-200 ease-out disabled:cursor-not-allowed disabled:shadow-none hover:translate-y-[-1px] hover:shadow-lg"
+                  style={{
+                    background: siteCheckBusy || !siteCheckInput.trim() ? "#d5def1" : "linear-gradient(180deg, #5b7fe3 0%, #4169e1 100%)",
+                    color: siteCheckBusy || !siteCheckInput.trim() ? "#526b9f" : "#ffffff",
+                    boxShadow: siteCheckBusy || !siteCheckInput.trim() ? "none" : "0 8px 20px rgba(58, 90, 154, 0.28)",
+                    fontSize: "10px",
+                    fontFamily: MONO,
+                  }}
                 >
                   CHECK
                 </button>
@@ -571,8 +594,8 @@ export function StudentDashboard() {
               )}
             </div>
             <div
-              className="rounded-md border px-3 py-2 mt-2"
-              style={{ background: "#111d30", borderColor: "#1e2e48" }}
+              className="rounded-2xl border px-4 py-3.5 mt-2 shadow-[0_12px_24px_rgba(45,72,155,0.10)]"
+              style={{ background: "rgba(255, 255, 255, 0.62)", borderColor: "rgba(99, 102, 241, 0.18)" }}
             >
               <div className="flex items-center gap-2 mb-2">
                 <Monitor size={12} className="text-[#3a6fff]" />
@@ -588,11 +611,12 @@ export function StudentDashboard() {
                   <select
                     value={labComlabId}
                     onChange={(e) => setLabComlabId(e.target.value)}
-                    className="rounded-sm px-2 py-1.5 border outline-none"
+                    className="rounded-xl px-2 py-2 border outline-none transition-all duration-200 ease-out"
                     style={{
-                      background: "#0f1a2a",
-                      borderColor: "#1e2e48",
+                      background: "rgba(15, 26, 42, 0.96)",
+                      borderColor: "rgba(130, 153, 214, 0.28)",
                       color: "#c5d5ea",
+                      boxShadow: "0 0 0 1px rgba(122, 143, 214, 0.15), inset 0 1px 0 rgba(255,255,255,0.04)",
                       fontSize: "11px",
                       fontFamily: MONO,
                     }}
@@ -612,26 +636,35 @@ export function StudentDashboard() {
                     value={labPcLabel}
                     onChange={(e) => setLabPcLabel(e.target.value)}
                     placeholder="e.g. PC-01"
-                    className="rounded-sm px-2 py-1.5 border outline-none w-full max-w-[200px]"
+                    className="rounded-xl px-2 py-2 border outline-none w-full max-w-[200px] transition-all duration-200 ease-out placeholder:text-[#7d8cab] placeholder:italic"
                     style={{
-                      background: "#0f1a2a",
-                      borderColor: "#1e2e48",
+                      background: "rgba(15, 26, 42, 0.96)",
+                      borderColor: "rgba(130, 153, 214, 0.28)",
                       color: "#c5d5ea",
+                      boxShadow: "0 0 0 1px rgba(122, 143, 214, 0.15), inset 0 1px 0 rgba(255,255,255,0.04)",
                       fontSize: "11px",
                       fontFamily: MONO,
+                    }}
+                    onFocus={(e) => {
+                      e.currentTarget.style.borderColor = "rgba(102, 142, 255, 0.7)";
+                      e.currentTarget.style.boxShadow = "0 0 0 3px rgba(90, 126, 255, 0.18), inset 0 1px 0 rgba(255,255,255,0.04)";
+                    }}
+                    onBlur={(e) => {
+                      e.currentTarget.style.borderColor = "rgba(130, 153, 214, 0.28)";
+                      e.currentTarget.style.boxShadow = "0 0 0 1px rgba(122, 143, 214, 0.15), inset 0 1px 0 rgba(255,255,255,0.04)";
                     }}
                   />
                 </label>
                 <button
                   type="button"
                   onClick={() => void saveLabStation()}
-                  className="px-3 py-1.5 rounded-sm"
-                  style={{ background: "#2a5080", color: "#c5d5ea", fontSize: "10px", fontFamily: MONO }}
+                  className="px-3 py-2 rounded-xl transition-all duration-200 ease-out hover:translate-y-[-1px] hover:shadow-lg"
+                  style={{ background: "linear-gradient(180deg, #5b7fe3 0%, #4169e1 100%)", color: "#ffffff", boxShadow: "0 8px 20px rgba(58, 90, 154, 0.22)", fontSize: "10px", fontFamily: MONO }}
                 >
                   Save
                 </button>
               </div>
-              <p className="text-[#4a6080] mt-1.5" style={{ fontSize: "9px", fontFamily: MONO }}>
+              <p className="text-[#4a6080] mt-1.5" style={{ fontSize: "9px", fontFamily: MONO, lineHeight: 1.55 }}>
                 Professor on record comes from the selected comlab schedule. Log in again to open a new attendance row
                 after changing comlab.
               </p>
@@ -659,8 +692,8 @@ export function StudentDashboard() {
       </div>
 
       <footer
-        className="flex items-center justify-between px-5 h-11 border-t border-[#1a2640] shrink-0"
-        style={{ background: "#0f1828" }}
+        className="flex items-center justify-between px-5 h-11 border-t border-[#dfeaff]/40 shrink-0 backdrop-blur-xl"
+        style={{ background: "rgba(255, 255, 255, 0.45)" }}
       >
         <div className="flex items-center gap-3 min-w-0 text-[#4a6080]" style={{ fontSize: "9px", fontFamily: MONO }}>
           <Monitor size={12} className="shrink-0" />
@@ -680,10 +713,10 @@ export function StudentDashboard() {
             Privacy-minimized audit trail active
           </span>
           <div
-            className="px-2.5 py-1 rounded-md border shrink-0"
+            className="runa-student-status-badge px-2.5 py-1 rounded-full border shrink-0 shadow-[inset_0_1px_0_rgba(255,255,255,0.3)]"
             style={{
-              background: kioskMode ? "#2a1810" : "#162035",
-              borderColor: kioskMode ? "#e8821a55" : "#3a6fff44",
+              background: kioskMode ? "rgba(255, 237, 213, 0.72)" : "rgba(255, 255, 255, 0.58)",
+              borderColor: kioskMode ? "rgba(232, 130, 26, 0.4)" : "rgba(99, 102, 241, 0.2)",
             }}
           >
             <span
@@ -691,13 +724,13 @@ export function StudentDashboard() {
               style={{
                 fontSize: "8px",
                 fontFamily: MONO,
-                color: kioskMode ? "#e8821a" : "#3a6fff",
+                color: kioskMode ? "#c2410c" : "#4169e1",
               }}
             >
               {kioskMode === null ? "…" : kioskMode ? "KIOSK MODE ACTIVE" : "LAB SESSION ACTIVE"}
             </span>
           </div>
-          <div className="flex items-center gap-1.5 text-[#4a6080]" style={{ fontSize: "10px", fontFamily: MONO }}>
+          <div className="flex items-center gap-1.5 text-[#52638f] rounded-full border border-[#ffffff]/60 bg-white/55 px-2.5 py-1" style={{ fontSize: "10px", fontFamily: MONO }}>
             <Monitor size={11} />
             <span className="tracking-widest uppercase">
               COMLAB {labComlabId} · {labPcLabel}
@@ -713,18 +746,18 @@ export function StudentDashboard() {
       {showCreateShortcutModal && canEditShortcuts && (
         <div
           className="fixed inset-0 z-[var(--z-modal)] flex items-center justify-center px-4"
-          style={{ background: "rgba(5, 10, 20, 0.82)" }}
+          style={{ background: "rgba(38, 55, 126, 0.3)", backdropFilter: "blur(10px)" }}
           role="dialog"
           aria-modal="true"
           aria-labelledby="create-shortcut-title"
           onClick={() => setShowCreateShortcutModal(false)}
         >
           <div
-            className="w-full max-w-sm rounded-lg border p-5 shadow-xl"
-            style={{ background: "#111d30", borderColor: "#2a3a55" }}
+            className="w-full max-w-sm rounded-2xl border p-5 shadow-xl"
+            style={{ background: "rgba(255,255,255,0.9)", borderColor: "rgba(255,255,255,0.78)", boxShadow: "0 24px 70px rgba(46,65,133,0.24)" }}
             onClick={(e) => e.stopPropagation()}
           >
-            <h2 id="create-shortcut-title" className="text-[#c5d5ea] mb-4" style={{ fontSize: "15px", fontFamily: BRAND }}>
+            <h2 id="create-shortcut-title" className="text-[#17233d] mb-4" style={{ fontSize: "15px", fontFamily: BRAND }}>
               Create shortcut
             </h2>
             <div className="flex flex-wrap gap-1 mb-3">
@@ -733,7 +766,7 @@ export function StudentDashboard() {
                   key={name}
                   type="button"
                   onClick={() => setDraftLabel(name)}
-                  className="px-2 py-0.5 rounded border border-[#2a3a55] text-[#4a6080] hover:text-[#7eb5f5] hover:border-[#3a5a9a] transition-colors"
+                  className="px-2 py-1 rounded-lg border border-[#cbd5f0] bg-[#f4f6ff] text-[#52638f] hover:text-[#4169e1] hover:border-[#8ea7e8] transition-colors"
                   style={{ fontSize: "8px", fontFamily: MONO }}
                 >
                   {name}
@@ -741,7 +774,7 @@ export function StudentDashboard() {
               ))}
             </div>
             <label className="block mb-3">
-              <span className="text-[#4a6080] uppercase tracking-wider" style={{ fontSize: "8px", fontFamily: MONO }}>
+              <span className="text-[#52638f] uppercase tracking-wider" style={{ fontSize: "8px", fontFamily: MONO }}>
                 Display name
               </span>
               <input
@@ -749,22 +782,22 @@ export function StudentDashboard() {
                 value={draftLabel}
                 onChange={(e) => setDraftLabel(e.target.value)}
                 placeholder="e.g. VS Code"
-                className="mt-1 w-full rounded-sm px-2 py-1.5 text-[#c5d5ea] border bg-[#0f1a2a] border-[#1e2e48] outline-none"
+                className="mt-1 w-full rounded-lg px-2 py-2 text-[#17233d] border bg-[#f7f8fd] border-[#cbd5f0] outline-none focus:border-[#7b96e8] focus:ring-2 focus:ring-[#4169e1]/15"
                 style={{ fontSize: "12px", fontFamily: MONO }}
                 maxLength={80}
               />
             </label>
             <div className="mb-4">
-              <span className="text-[#4a6080] uppercase tracking-wider" style={{ fontSize: "8px", fontFamily: MONO }}>
+                <span className="text-[#52638f] uppercase tracking-wider" style={{ fontSize: "8px", fontFamily: MONO }}>
                 Target
               </span>
-              <p className="text-[#4a6080] mt-1 break-all" style={{ fontSize: "10px", fontFamily: MONO }} title={draftPath || undefined}>
+              <p className="text-[#66718a] mt-1 break-all" style={{ fontSize: "10px", fontFamily: MONO }} title={draftPath || undefined}>
                 {draftPath ? pathTail(draftPath, 56) : "—"}
               </p>
               <button
                 type="button"
                 onClick={() => void pickTargetFile()}
-                className="mt-2 px-2 py-1 rounded border border-[#2a3a55] text-[#7eb5f5] hover:bg-[#1e2e48] transition-colors"
+                className="mt-2 px-2.5 py-1.5 rounded-lg border border-[#cbd5f0] bg-[#f4f6ff] text-[#4169e1] hover:bg-[#e8edff] transition-colors"
                 style={{ fontSize: "10px", fontFamily: MONO }}
               >
                 Choose .exe / .lnk…
@@ -774,7 +807,7 @@ export function StudentDashboard() {
               <button
                 type="button"
                 onClick={() => setShowCreateShortcutModal(false)}
-                className="px-3 py-2 rounded-sm border border-[#2a3a55] text-[#4a6080] hover:bg-[#1e2e48]"
+                className="px-3 py-2 rounded-lg border border-[#cbd5f0] bg-white/60 text-[#52638f] hover:bg-[#eef2ff]"
                 style={{ fontSize: "11px", fontFamily: MONO }}
               >
                 Cancel
@@ -782,7 +815,7 @@ export function StudentDashboard() {
               <button
                 type="button"
                 onClick={() => void addShortcut()}
-                className="inline-flex items-center gap-1 px-3 py-2 rounded-sm border border-[#3a6fff55] text-[#7eb5f5] hover:bg-[#1e3055]"
+                className="inline-flex items-center gap-1 px-3 py-2 rounded-lg border border-[#4169e1] bg-[#4169e1] text-white hover:bg-[#3558c7] shadow-[0_8px_18px_rgba(65,105,225,0.2)]"
                 style={{ fontSize: "11px", fontFamily: MONO }}
               >
                 <Plus size={14} /> Add
@@ -796,7 +829,7 @@ export function StudentDashboard() {
         <div
           ref={shortcutMenuRef}
           className="fixed z-[10001] w-[168px] rounded-md border py-1 shadow-xl"
-          style={{ left: shortcutMenu.x, top: shortcutMenu.y, background: "#111d30", borderColor: "#2a3a55" }}
+          style={{ left: shortcutMenu.x, top: shortcutMenu.y, background: "rgba(255,255,255,0.92)", borderColor: "rgba(99,102,241,0.18)" }}
           role="menu"
           aria-label="Shortcut actions"
         >
@@ -907,7 +940,7 @@ export function StudentDashboard() {
         >
           <div
             className="max-w-md w-full rounded-lg border p-6 shadow-xl"
-            style={{ background: "#111d30", borderColor: "#2a3a55" }}
+            style={{ background: "rgba(255,255,255,0.82)", borderColor: "rgba(99,102,241,0.18)" }}
           >
             <h2 id="runa-tour-title" className="text-[#c5d5ea] mb-3" style={{ fontSize: "16px", fontFamily: BRAND }}>
               Welcome to Runa (student)

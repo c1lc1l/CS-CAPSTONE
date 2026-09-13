@@ -295,8 +295,8 @@ export function AuditTrailsPanel() {
   }, [runaFilter, runaSearch]);
 
   return (
-    <div className="h-full overflow-y-auto" style={{ background: "#0d1320", fontFamily: GROTESK }}>
-      <div className="sticky top-0 z-[var(--z-banner)] flex gap-2 px-4 py-2 border-b border-[#1a2640]" style={{ background: "#0a1020" }}>
+    <div className="runa-admin-view h-full overflow-y-auto" style={{ background: "rgba(255,255,255,0.24)", fontFamily: GROTESK }}>
+      <div className="sticky top-0 z-[var(--z-banner)] flex gap-2 px-4 py-2 border-b border-white/60" style={{ background: "rgba(255,255,255,0.42)" }}>
         <button
           type="button"
           onClick={() => setSurface("hardware")}
@@ -304,9 +304,9 @@ export function AuditTrailsPanel() {
           style={{
             fontFamily: MONO,
             fontSize: "10px",
-            borderColor: surface === "hardware" ? "#3a6fff" : "#2a3a55",
-            color: surface === "hardware" ? "#c5d5ea" : "#4a6080",
-            background: surface === "hardware" ? "#162035" : "transparent",
+            borderColor: surface === "hardware" ? "#4169e1" : "#cbd5f0",
+            color: surface === "hardware" ? "#3156b8" : "#6474a2",
+            background: surface === "hardware" ? "#e0eaff" : "rgba(255,255,255,0.42)",
           }}
         >
           Institutional attendance
@@ -321,9 +321,9 @@ export function AuditTrailsPanel() {
           style={{
             fontFamily: MONO,
             fontSize: "10px",
-            borderColor: surface === "runa" ? "#3a6fff" : "#2a3a55",
-            color: surface === "runa" ? "#c5d5ea" : "#4a6080",
-            background: surface === "runa" ? "#162035" : "transparent",
+            borderColor: surface === "runa" ? "#4169e1" : "#cbd5f0",
+            color: surface === "runa" ? "#3156b8" : "#6474a2",
+            background: surface === "runa" ? "#e0eaff" : "rgba(255,255,255,0.42)",
           }}
         >
           RUNA agent / HITL log
@@ -362,23 +362,23 @@ export function AuditTrailsPanel() {
             </div>
             <div className="flex flex-col gap-2 items-stretch sm:items-end shrink-0">
               <div
-                className="flex items-center gap-2 px-3 py-1.5 rounded-md w-full sm:w-56"
-                style={{ background: "#0d1320", border: "1px solid #1e2e48" }}
+                className="runa-admin-search-field flex items-center gap-2 px-3 py-1.5 rounded-md w-full sm:w-56"
+                style={{ background: "rgba(247,248,253,0.92)", border: "1px solid rgba(99,102,241,0.18)" }}
               >
                 <Search size={12} className="text-[#4a6080] shrink-0" />
                 <input
                   value={runaSearch}
                   onChange={(e) => setRunaSearch(e.target.value)}
                   placeholder="Search events, paths…"
-                  className="bg-transparent outline-none text-[#c5d5ea] placeholder-[#4a6080] w-full min-w-0"
+                  className="bg-transparent outline-none text-[#17233d] placeholder-[#8b96b0] w-full min-w-0"
                   style={{ fontSize: "11px", fontFamily: MONO }}
                 />
               </div>
               <button
                 type="button"
                 onClick={() => void refreshRuna()}
-                className="px-3 py-1.5 rounded border text-[#7eb5f5] hover:bg-[#1e2e48] transition-colors"
-                style={{ fontSize: "10px", fontFamily: MONO, borderColor: "#2a3a55" }}
+                className="px-3 py-1.5 rounded border text-[#4169e1] bg-white/45 hover:bg-[#eef2ff] transition-colors"
+                style={{ fontSize: "10px", fontFamily: MONO, borderColor: "#cbd5f0" }}
               >
                 Refresh
               </button>
@@ -425,8 +425,8 @@ export function AuditTrailsPanel() {
                   triggerCsvDownload(`runa_audit_${runaFilter}_${stamp}.csv`, buildCsv(rows));
                 }}
                 disabled={runaFiltered.length === 0}
-                className="flex items-center justify-center gap-1.5 px-3 py-1.5 rounded border transition-colors hover:bg-[#1e2e48] disabled:opacity-40 disabled:cursor-not-allowed"
-                style={{ borderColor: "#2a3a55", color: "#7eb5f5", fontSize: "10px", fontFamily: MONO }}
+                className="flex items-center justify-center gap-1.5 px-3 py-1.5 rounded border transition-colors bg-white/45 hover:bg-[#eef2ff] disabled:opacity-40 disabled:cursor-not-allowed"
+                style={{ borderColor: "#cbd5f0", color: "#4169e1", fontSize: "10px", fontFamily: MONO }}
               >
                 <Download size={11} />
                 Export CSV ({runaFiltered.length})
@@ -435,7 +435,7 @@ export function AuditTrailsPanel() {
           </div>
           <div className={`${ADMIN_PANEL_CLASS} overflow-hidden`} style={ADMIN_PANEL_STYLE}>
             <div
-              className="grid px-4 py-2 border-b border-[#1a2640] text-[#4a6080] uppercase tracking-widest"
+              className="grid px-4 py-2 border-b border-[#dfe6f7] bg-white/35 text-[#6474a2] uppercase tracking-widest"
               style={{
                 fontSize: "8px",
                 fontFamily: MONO,
@@ -556,7 +556,7 @@ export function AuditTrailsPanel() {
       ) : (
       <>
       {/* Header */}
-      <div className="px-7 pt-5 pb-4 border-b border-[#1a2640]" style={{ background: "#0f1828" }}>
+      <div className="px-7 pt-5 pb-4 border-b border-white/60" style={{ background: "rgba(255,255,255,0.38)" }}>
         <div className="flex items-start justify-between">
           <div>
             <p className="text-[#4a6080] tracking-widest uppercase mb-2" style={{ fontSize: "8px", fontFamily: MONO }}>
@@ -606,7 +606,7 @@ export function AuditTrailsPanel() {
 
       {/* Date Filter Panel */}
       {showDateFilter && (
-        <div className="px-7 py-4 border-b border-[#1a2640]" style={{ background: "#111d30" }}>
+        <div className="px-7 py-4 border-b border-white/60" style={{ background: "rgba(255,255,255,0.46)" }}>
           <div className="flex items-center gap-4">
             <div>
               <label className="block text-[#4a6080] tracking-widest uppercase mb-2" style={{ fontSize: "8px", fontFamily: MONO }}>
@@ -691,8 +691,8 @@ export function AuditTrailsPanel() {
               <div className="flex items-center gap-3 shrink-0 flex-wrap justify-end">
                 {/* Search */}
                 <div
-                  className="flex items-center gap-2 px-3 py-1.5 rounded-md"
-                  style={{ background: "#0d1320", border: "1px solid #1e2e48" }}
+                  className="runa-admin-search-field flex items-center gap-2 px-3 py-1.5 rounded-md"
+                  style={{ background: "rgba(247,248,253,0.94)", border: "1px solid rgba(99,102,241,0.2)" }}
                 >
                   <Search size={12} className="text-[#4a6080]" />
                   <input
@@ -702,7 +702,7 @@ export function AuditTrailsPanel() {
                       setPage(1);
                     }}
                     placeholder="Email, PC, comlab, professor…"
-                    className="bg-transparent outline-none text-[#c5d5ea] placeholder-[#4a6080]"
+                    className="bg-transparent outline-none text-[#17233d] placeholder-[#8b96b0]"
                     style={{ fontSize: "11px", fontFamily: MONO, width: "min(220px, 38vw)" }}
                   />
                 </div>
@@ -761,8 +761,8 @@ export function AuditTrailsPanel() {
               style={{
                 gridTemplateColumns:
                   "minmax(72px,0.75fr) minmax(52px,0.55fr) minmax(120px,1.15fr) minmax(96px,1fr) minmax(76px,0.7fr) minmax(76px,0.7fr) minmax(64px,0.65fr)",
-                background: "#0d1320",
-                borderBottom: "1px solid #1a2640",
+                background: "rgba(247,248,253,0.82)",
+                borderBottom: "1px solid rgba(99,102,241,0.16)",
               }}
             >
               {["COMLAB", "PC", "EMAIL", "PROFESSOR", "TIME IN", "TIME OUT", "STATUS"].map((col) => (

@@ -94,8 +94,8 @@ export function LoginPage() {
 
   return (
     <div
-      className="h-full w-full flex flex-col relative overflow-hidden min-h-0"
-      style={{ background: "#0d1320", fontFamily: GROTESK }}
+      className="runa-login-screen h-full w-full flex flex-col relative overflow-hidden min-h-0"
+      style={{ fontFamily: GROTESK }}
     >
       {/* Corner brackets */}
       <CornerBracket position="top-left" />
@@ -104,19 +104,19 @@ export function LoginPage() {
       <CornerBracket position="bottom-right" />
 
       {/* Main content */}
-      <div className="flex-1 flex items-center justify-center px-8 py-16 relative">
+      <div className="runa-login-content flex-1 flex items-center justify-center px-8 py-16 relative">
         {/* Watermark */}
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-none select-none" style={{ zIndex: 0 }}>
-          <div className="text-[#1a2540] font-black tracking-tighter leading-none" style={{ fontSize: "clamp(180px, 25vw, 340px)", opacity: 0.6, fontFamily: BRAND }}>
+        <div className="runa-login-watermark absolute inset-0 flex items-center justify-center pointer-events-none select-none" style={{ zIndex: 0 }}>
+            <div className="text-[#dce3fa] font-black tracking-tighter leading-none" style={{ fontSize: "clamp(180px, 25vw, 340px)", opacity: 0.6, fontFamily: BRAND }}>
             RUNA
           </div>
         </div>
 
         {/* Two-column layout */}
-        <div className="relative z-[var(--z-banner)] w-full max-w-5xl flex flex-col md:flex-row items-center gap-12">
+        <div className="runa-login-layout relative z-[var(--z-banner)] w-full max-w-5xl flex flex-col md:flex-row items-center gap-12">
 
           {/* Left: Title & Info */}
-          <div className="flex-1 min-w-0">
+          <div className="runa-login-brand flex-1 min-w-0">
             <p className="text-[#4a6fa5] tracking-widest uppercase mb-3" style={{ fontSize: "11px", fontFamily: MONO }}>
               System Authentication Required
             </p>
@@ -144,16 +144,16 @@ export function LoginPage() {
 
           {/* Right: Login Form Card */}
           <div
-            className="w-full md:w-[360px] shrink-0 rounded-lg border border-[#1e2e48] relative overflow-hidden"
-            style={{ background: "#131e30" }}
+            className="runa-login-card w-full md:w-[360px] shrink-0 rounded-lg border border-[#1e2e48] relative overflow-hidden"
+            style={{ background: "rgba(255,255,255,0.78)" }}
           >
             {/* ── Role Toggle Tabs ── */}
             <div className="flex border-b border-[#1e2e48]">
               <button
                 onClick={() => { setRole("student"); setEmail(""); setPassword(""); }}
-                className="flex-1 flex items-center justify-center gap-2 py-3.5 transition-all"
+                className={`runa-login-student-tab ${!isAdmin ? "runa-login-student-tab-active" : ""} flex-1 flex items-center justify-center gap-2 py-3.5 transition-all`}
                 style={{
-                  background: !isAdmin ? "#0f1828" : "transparent",
+                  background: !isAdmin ? "#0f172a" : "transparent",
                   borderBottom: !isAdmin ? "2px solid #3a6fff" : "2px solid transparent",
                   color: !isAdmin ? "#7eb5f5" : "#4a6080",
                   fontSize: "10px",
@@ -165,9 +165,9 @@ export function LoginPage() {
               </button>
               <button
                 onClick={() => { setRole("admin"); setEmail(""); setPassword(""); }}
-                className="flex-1 flex items-center justify-center gap-2 py-3.5 transition-all"
+                className={`runa-login-admin-tab ${isAdmin ? "runa-login-admin-tab-active" : ""} flex-1 flex items-center justify-center gap-2 py-3.5 transition-all`}
                 style={{
-                  background: isAdmin ? "#0f1828" : "transparent",
+                  background: isAdmin ? "#fff7ed" : "transparent",
                   borderBottom: isAdmin ? "2px solid #e8821a" : "2px solid transparent",
                   color: isAdmin ? "#e8821a" : "#4a6080",
                   fontSize: "10px",
@@ -192,7 +192,7 @@ export function LoginPage() {
               <div
                 className="w-9 h-9 rounded-full flex items-center justify-center border"
                 style={{
-                  background: isAdmin ? "#1e2a10" : "#101e30",
+                  background: isAdmin ? "#fff7ed" : "#eef2ff",
                   borderColor: isAdmin ? "#e8821a40" : "#3a6fff40",
                 }}
               >
@@ -217,8 +217,8 @@ export function LoginPage() {
                     placeholder={isAdmin ? "admin@runa.edu.ph" : "student@runa.edu.ph"}
                     className="w-full rounded-sm px-4 py-3 pr-10 text-[#c5d5ea] placeholder-[#2e4060] border outline-none transition-colors"
                     style={{
-                      background: "#0f1a2a",
-                      borderColor: "#1e2e48",
+                      background: "#f7f8fd",
+                      borderColor: "#d6def5",
                       fontSize: "13px",
                       fontFamily: MONO,
                     }}
@@ -243,8 +243,8 @@ export function LoginPage() {
                     placeholder="••••••••••••"
                     className="w-full rounded-sm pl-10 pr-11 py-3 text-[#c5d5ea] placeholder-[#2e4060] border outline-none transition-colors"
                     style={{
-                      background: "#0f1a2a",
-                      borderColor: "#1e2e48",
+                      background: "#f7f8fd",
+                      borderColor: "#d6def5",
                       fontSize: "13px",
                       fontFamily: MONO,
                     }}
@@ -299,7 +299,7 @@ export function LoginPage() {
               <button
                 type="submit"
                 disabled={submitting}
-                className="w-full flex items-center justify-center gap-2 py-3 rounded-sm tracking-widest uppercase transition-all hover:opacity-90 active:scale-[0.98] disabled:opacity-50"
+                className={`runa-login-submit ${isAdmin ? "runa-login-admin-submit" : "runa-login-student-submit"} w-full flex items-center justify-center gap-2 py-3 rounded-sm tracking-widest uppercase transition-all hover:opacity-90 active:scale-[0.98] disabled:opacity-50`}
                 style={{
                   background: isAdmin ? "#e8821a" : "#c5d5ea",
                   color: isAdmin ? "#0d1320" : "#0d1320",
@@ -316,7 +316,7 @@ export function LoginPage() {
                 <button
                   type="button"
                   className="w-full flex items-center justify-center gap-2 py-3 rounded-sm tracking-widest uppercase border border-[#2a3a55] text-[#4a6080] hover:border-[#4a6fa5] hover:text-[#7eb5f5] transition-all"
-                  style={{ background: "#0f1a2a", fontSize: "10px", fontFamily: MONO }}
+                  style={{ background: "#f4f6ff", fontSize: "10px", fontFamily: MONO }}
                   onClick={() => navigate("/access-code")}
                 >
                   <KeyRound size={13} />
@@ -337,9 +337,9 @@ export function LoginPage() {
 
       {/* Bottom status bar */}
       <div className="flex items-center justify-between px-8 pb-6 relative z-[var(--z-banner)]">
-        <div className="flex items-center gap-2 border border-[#1e2e48] bg-[#111d30] px-4 py-2 rounded-sm">
-          <Shield size={12} className="text-[#4a6fa5]" />
-          <span className="text-[#c5d5ea] tracking-widest uppercase" style={{ fontSize: "9px", fontFamily: MONO }}>
+        <div className="flex items-center gap-2 border border-[#7f97d7] bg-white/45 px-4 py-2 rounded-lg">
+          <Shield size={12} className="text-[#52638f]" />
+          <span className="text-[#52638f] tracking-widest uppercase" style={{ fontSize: "9px", fontFamily: MONO }}>
             System Protection: Active
           </span>
         </div>

@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router";
 import { useElectron } from "../ipc/useElectron";
 
-const PROTECTED_PREFIXES = ["/dashboard", "/student-dashboard"];
+const PROTECTED_PREFIXES = ["/dashboard", "/student-dashboard", "/settings"];
 
 function isProtectedPath(pathname: string): boolean {
   return PROTECTED_PREFIXES.some(
@@ -46,6 +46,11 @@ export function Root() {
           setReady(true);
           return;
         }
+        if (path.startsWith("/settings") && session.role !== "admin" && session.role !== "student") {
+          navigate("/", { replace: true });
+          setReady(true);
+          return;
+        }
         setReady(true);
         return;
       }
@@ -76,7 +81,10 @@ export function Root() {
 
   if (!ready) {
     return (
-      <div className="h-full w-full min-h-0" style={{ background: "#0d1320" }} />
+      <div
+        className="h-full w-full min-h-0"
+        style={{ background: "linear-gradient(135deg, #4169e1 0%, #7594ea 42%, #eef1fb 100%)" }}
+      />
     );
   }
 

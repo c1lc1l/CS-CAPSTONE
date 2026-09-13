@@ -23,7 +23,7 @@ export function LabEnvironmentSection({
   })();
 
   return (
-    <section className="rounded-lg border border-[#1e2e48] bg-[#0d1626] px-3.5 py-3 min-w-0">
+    <section className="runa-student-runtime-card rounded-lg border border-[#dfeaff]/60 bg-white/36 px-3.5 py-3 min-w-0">
       <span className={sectionTitleClass}>Lab &amp; runtime</span>
       <div className="space-y-3">
         <div className="flex gap-2.5">
