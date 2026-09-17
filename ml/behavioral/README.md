@@ -26,7 +26,7 @@ Held-out test set (800 sessions, never seen during training). All rows use
 | Recall | 0.6250 | **0.4896** | 0.2812 |
 | F1 | 0.7362 | **0.6483** | 0.4390 |
 
-ROC-AUC 0.9096 · PR-AUC 0.8126
+Hold-out ROC-AUC 0.9271 · PR-AUC 0.8210 · OOB 0.9275
 
 5-fold stratified CV: F1-macro **0.7920 ± 0.0359**, ROC-AUC 0.9096 ± 0.0200.
 

@@ -1,0 +1,105 @@
+{
+  "dataset": {
+    "source": "PhiUSIIL Phishing URL Dataset, UCI id=967",
+    "hosts": 219043,
+    "features": 20,
+    "feature_scope": "host-only lexical (collection artifact neutralised - see features.py)",
+    "phishing": 84251,
+    "phishing_rate": 0.3846,
+    "registrable_domains": 169388,
+    "split": "domain-separated (GroupShuffleSplit); no domain spans train/test"
+  },
+  "holdout_uncalibrated_argmax": {
+    "precision": 0.867,
+    "recall": 0.7503,
+    "f1": 0.8045
+  },
+  "holdout_calibrated_thresholds": [
+    {
+      "threshold": 0.5,
+      "precision": 0.9458,
+      "recall": 0.6541,
+      "f1": 0.7734,
+      "flagged": 14854
+    },
+    {
+      "threshold": 0.7,
+      "precision": 0.9746,
+      "recall": 0.5511,
+      "f1": 0.704,
+      "flagged": 12143
+    },
+    {
+      "threshold": 0.9,
+      "precision": 0.9904,
+      "recall": 0.3455,
+      "f1": 0.5123,
+      "flagged": 7492
+    }
+  ],
+  "holdout_operating_threshold": {
+    "threshold": 0.7,
+    "precision": 0.9746,
+    "recall": 0.5511,
+    "f1": 0.704,
+    "flagged": 12143
+  },
+  "roc_auc": 0.8734,
+  "pr_auc": 0.8871,
+  "oob_score": 0.8217,
+  "brier_raw": 0.1284,
+  "brier_calibrated": 0.1268,
+  "cross_validation": [
+    {
+      "metric": "accuracy",
+      "mean": 0.8244,
+      "std": 0.0084
+    },
+    {
+      "metric": "precision_macro",
+      "mean": 0.8215,
+      "std": 0.0178
+    },
+    {
+      "metric": "recall_macro",
+      "mean": 0.7925,
+      "std": 0.0305
+    },
+    {
+      "metric": "f1_macro",
+      "mean": 0.802,
+      "std": 0.026
+    },
+    {
+      "metric": "roc_auc",
+      "mean": 0.838,
+      "std": 0.0305
+    }
+  ],
+  "baseline_comparison": [
+    {
+      "model": "Logistic Regression",
+      "f1_macro_mean": 0.8025,
+      "f1_macro_std": 0.0055
+    },
+    {
+      "model": "Random Forest",
+      "f1_macro_mean": 0.7934,
+      "f1_macro_std": 0.0083
+    },
+    {
+      "model": "Decision Tree",
+      "f1_macro_mean": 0.776,
+      "f1_macro_std": 0.0101
+    },
+    {
+      "model": "Naive Bayes",
+      "f1_macro_mean": 0.688,
+      "f1_macro_std": 0.0113
+    }
+  ],
+  "max_solo_feature_auc": 0.7223,
+  "leakage_screen_passed": true,
+  "operating_threshold": 0.7,
+  "random_state": 42
+}
