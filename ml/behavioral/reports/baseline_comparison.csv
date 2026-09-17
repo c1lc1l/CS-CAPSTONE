@@ -1,0 +1,5 @@
+model,f1_macro_mean,f1_macro_std
+Random Forest,0.8448,0.0229
+Decision Tree,0.7853,0.012
+Naive Bayes,0.7648,0.0366
+Logistic Regression,0.7088,0.0187

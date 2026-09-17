@@ -1,0 +1,6 @@
+archetype,n,detected,recall
+credential_sharing,20,15,0.75
+off_hours,21,8,0.381
+policy_probing,18,10,0.5556
+unattended_idle,21,17,0.8095
+usb_heavy,22,5,0.2273

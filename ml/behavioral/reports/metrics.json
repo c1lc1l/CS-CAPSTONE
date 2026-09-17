@@ -1,0 +1,79 @@
+{
+  "dataset": {
+    "sessions": 4000,
+    "features": 17,
+    "anomalous": 508,
+    "anomaly_rate": 0.127,
+    "source": "simulated (see simulate.py) - not real-world detection accuracy"
+  },
+  "holdout_threshold_0.5": {
+    "precision": 0.9375,
+    "recall": 0.5882,
+    "f1": 0.7229
+  },
+  "holdout_operating_threshold": {
+    "threshold": 0.7,
+    "precision": 0.9322,
+    "recall": 0.5392,
+    "f1": 0.6832,
+    "flagged": 59
+  },
+  "roc_auc": 0.9046,
+  "pr_auc": 0.8087,
+  "oob_score": 0.9444,
+  "brier_raw": 0.0488,
+  "brier_calibrated": 0.0468,
+  "cross_validation": [
+    {
+      "metric": "accuracy",
+      "mean": 0.9403,
+      "std": 0.0058
+    },
+    {
+      "metric": "precision_macro",
+      "mean": 0.9371,
+      "std": 0.0206
+    },
+    {
+      "metric": "recall_macro",
+      "mean": 0.7833,
+      "std": 0.0241
+    },
+    {
+      "metric": "f1_macro",
+      "mean": 0.8372,
+      "std": 0.02
+    },
+    {
+      "metric": "roc_auc",
+      "mean": 0.9235,
+      "std": 0.0106
+    }
+  ],
+  "baseline_comparison": [
+    {
+      "model": "Random Forest",
+      "f1_macro_mean": 0.8448,
+      "f1_macro_std": 0.0229
+    },
+    {
+      "model": "Decision Tree",
+      "f1_macro_mean": 0.7853,
+      "f1_macro_std": 0.012
+    },
+    {
+      "model": "Naive Bayes",
+      "f1_macro_mean": 0.7648,
+      "f1_macro_std": 0.0366
+    },
+    {
+      "model": "Logistic Regression",
+      "f1_macro_mean": 0.7088,
+      "f1_macro_std": 0.0187
+    }
+  ],
+  "max_solo_feature_auc": 0.6123,
+  "leakage_screen_passed": true,
+  "operating_threshold": 0.7,
+  "random_state": 42
+}

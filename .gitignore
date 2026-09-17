@@ -15,6 +15,10 @@ python-service/build/
 python-service/service.spec
 aws/lambda/*.zip
 
+# ML: regenerable from a pinned seed — reports/ are kept as thesis artifacts
+ml/**/data/
+ml/**/model/
+
 release/
 
 digest.txt
