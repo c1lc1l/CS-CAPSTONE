@@ -1,6 +1,6 @@
 metric,mean,std
-accuracy,0.9403,0.0058
-precision_macro,0.9371,0.0206
-recall_macro,0.7833,0.0241
-f1_macro,0.8372,0.02
-roc_auc,0.9235,0.0106
+accuracy,0.932,0.0091
+precision_macro,0.9252,0.0143
+recall_macro,0.7337,0.0369
+f1_macro,0.792,0.0359
+roc_auc,0.9096,0.02

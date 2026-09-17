@@ -54,7 +54,11 @@ def _heartbeats(rng, duration, gap_mean, gap_max):
 def _normal_session(rng) -> dict:
     # Class hours with small legitimate tails either side.
     start_hour = int(np.clip(rng.normal(12.0, 2.6), 7, 19))
-    day_of_week = int(rng.choice([0, 1, 2, 3, 4, 5], p=[0.19, 0.19, 0.19, 0.19, 0.19, 0.05]))
+    # Sunday must remain reachable for normal sessions: if only anomalies can
+    # fall on day 6, the day itself becomes a deterministic tell.
+    day_of_week = int(
+        rng.choice([0, 1, 2, 3, 4, 5, 6], p=[0.188, 0.188, 0.188, 0.188, 0.188, 0.045, 0.015])
+    )
     duration = float(np.clip(rng.lognormal(np.log(58), 0.48), 12, 190))
 
     gap_mean = float(np.clip(rng.normal(5.4, 0.9), 4.2, 11))
@@ -71,7 +75,15 @@ def _normal_session(rng) -> dict:
         "chat_request_count": int(np.clip(rng.poisson(4.0), 0, 60)),
         "tool_invoke_count": int(np.clip(rng.poisson(2.0), 0, 40)),
         "file_op_count": int(np.clip(rng.poisson(2.2), 0, 50)),
-        "distinct_workstations": 1,
+        # A student moving seats or reconnecting on another machine mid-session
+        # legitimately produces two workstations. If only anomalies could show
+        # >1, the feature would deterministically imply the label.
+        "distinct_workstations": int(rng.choice([1, 2], p=[0.96, 0.04])),
+        # NEGATIVE CONTROL: deliberately independent of the label. Its
+        # importance should come out near zero, confirming the model does not
+        # manufacture signal where none exists. Its low importance is
+        # therefore a property of the simulation, not a finding about
+        # account type in the real system.
         "is_guest_account": bool(rng.random() < 0.08),
     }
 
@@ -88,7 +100,9 @@ def _normal_session(rng) -> dict:
             elif drift == 2:
                 s["blocked_url_count"] = int(rng.integers(3, 10))
             elif drift == 3:
-                s["usb_insert_count"] = int(rng.integers(2, 5))
+                # Upper end overlaps the anomalous range so no structural cap
+                # makes high USB counts exclusively anomalous by construction.
+                s["usb_insert_count"] = int(rng.integers(2, 7))
             elif drift == 4:
                 # A quiet but legitimate session: reading, not clicking.
                 s["app_launch_count"] = int(rng.integers(0, 2))

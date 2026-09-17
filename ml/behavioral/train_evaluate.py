@@ -239,11 +239,15 @@ def main() -> int:
             "anomaly_rate": round(float(y.mean()), 4),
             "source": "simulated (see simulate.py) - not real-world detection accuracy",
         },
-        "holdout_threshold_0.5": {
+        # All reported thresholds use calibrated probabilities so the rows are
+        # directly comparable. The uncalibrated argmax is kept separately for
+        # reference rather than mixed into the same table.
+        "holdout_uncalibrated_argmax": {
             "precision": round(float(precision_score(y_test, y_pred, zero_division=0)), 4),
             "recall": round(float(recall_score(y_test, y_pred, zero_division=0)), 4),
             "f1": round(float(f1_score(y_test, y_pred, zero_division=0)), 4),
         },
+        "holdout_calibrated_thresholds": thresholds,
         "holdout_operating_threshold": op,
         "roc_auc": round(roc, 4),
         "pr_auc": round(pr, 4),

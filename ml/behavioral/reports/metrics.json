@@ -2,77 +2,100 @@
   "dataset": {
     "sessions": 4000,
     "features": 17,
-    "anomalous": 508,
-    "anomaly_rate": 0.127,
+    "anomalous": 478,
+    "anomaly_rate": 0.1195,
     "source": "simulated (see simulate.py) - not real-world detection accuracy"
   },
-  "holdout_threshold_0.5": {
-    "precision": 0.9375,
-    "recall": 0.5882,
-    "f1": 0.7229
+  "holdout_uncalibrated_argmax": {
+    "precision": 0.963,
+    "recall": 0.5417,
+    "f1": 0.6933
   },
+  "holdout_calibrated_thresholds": [
+    {
+      "threshold": 0.5,
+      "precision": 0.8955,
+      "recall": 0.625,
+      "f1": 0.7362,
+      "flagged": 67
+    },
+    {
+      "threshold": 0.7,
+      "precision": 0.9592,
+      "recall": 0.4896,
+      "f1": 0.6483,
+      "flagged": 49
+    },
+    {
+      "threshold": 0.9,
+      "precision": 1.0,
+      "recall": 0.2812,
+      "f1": 0.439,
+      "flagged": 27
+    }
+  ],
   "holdout_operating_threshold": {
     "threshold": 0.7,
-    "precision": 0.9322,
-    "recall": 0.5392,
-    "f1": 0.6832,
-    "flagged": 59
+    "precision": 0.9592,
+    "recall": 0.4896,
+    "f1": 0.6483,
+    "flagged": 49
   },
-  "roc_auc": 0.9046,
-  "pr_auc": 0.8087,
-  "oob_score": 0.9444,
-  "brier_raw": 0.0488,
-  "brier_calibrated": 0.0468,
+  "roc_auc": 0.9271,
+  "pr_auc": 0.821,
+  "oob_score": 0.9275,
+  "brier_raw": 0.0478,
+  "brier_calibrated": 0.0449,
   "cross_validation": [
     {
       "metric": "accuracy",
-      "mean": 0.9403,
-      "std": 0.0058
+      "mean": 0.932,
+      "std": 0.0091
     },
     {
       "metric": "precision_macro",
-      "mean": 0.9371,
-      "std": 0.0206
+      "mean": 0.9252,
+      "std": 0.0143
     },
     {
       "metric": "recall_macro",
-      "mean": 0.7833,
-      "std": 0.0241
+      "mean": 0.7337,
+      "std": 0.0369
     },
     {
       "metric": "f1_macro",
-      "mean": 0.8372,
-      "std": 0.02
+      "mean": 0.792,
+      "std": 0.0359
     },
     {
       "metric": "roc_auc",
-      "mean": 0.9235,
-      "std": 0.0106
+      "mean": 0.9096,
+      "std": 0.02
     }
   ],
   "baseline_comparison": [
     {
       "model": "Random Forest",
-      "f1_macro_mean": 0.8448,
-      "f1_macro_std": 0.0229
+      "f1_macro_mean": 0.765,
+      "f1_macro_std": 0.0175
     },
     {
       "model": "Decision Tree",
-      "f1_macro_mean": 0.7853,
-      "f1_macro_std": 0.012
+      "f1_macro_mean": 0.7274,
+      "f1_macro_std": 0.0287
     },
     {
       "model": "Naive Bayes",
-      "f1_macro_mean": 0.7648,
-      "f1_macro_std": 0.0366
+      "f1_macro_mean": 0.6859,
+      "f1_macro_std": 0.0332
     },
     {
       "model": "Logistic Regression",
-      "f1_macro_mean": 0.7088,
-      "f1_macro_std": 0.0187
+      "f1_macro_mean": 0.6497,
+      "f1_macro_std": 0.023
     }
   ],
-  "max_solo_feature_auc": 0.6123,
+  "max_solo_feature_auc": 0.609,
   "leakage_screen_passed": true,
   "operating_threshold": 0.7,
   "random_state": 42
