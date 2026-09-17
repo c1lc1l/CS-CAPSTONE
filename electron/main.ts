@@ -9,7 +9,7 @@ import {
   dialog,
 } from "electron";
 import path from "path";
-import { spawn, ChildProcess } from "child_process";
+import { spawn, execFileSync, ChildProcess } from "child_process";
 import { randomUUID } from "crypto";
 const Store = require("electron-store");
 import fsSync from "fs";
@@ -189,6 +189,21 @@ interface StoreSchema {
     reason: string;
     approvalId?: string;
   }>;
+  /** Offline-first attendance cache. `synced` is local bookkeeping, stripped before returning to renderer. */
+  attendanceSessions: AttendanceSessionRow[];
+}
+
+interface AttendanceSessionRow {
+  id: string;
+  studentEmail: string;
+  comlabId: string;
+  comlabLabel: string;
+  workstationLabel: string;
+  professorName: string;
+  timeIn: string;
+  timeOut: string | null;
+  lastSeenAt: string | null;
+  synced: boolean;
 }
 
 // ─────────────────────────────────────────────
@@ -230,6 +245,7 @@ const store = new Store({
       reason: string;
       approvalId?: string;
     }>,
+    attendanceSessions: [] as AttendanceSessionRow[],
   },
 });
 
@@ -305,7 +321,7 @@ const CLOUD_ENDPOINTS = {
 
 const CLOUD_TIMEOUT_MS = 15_000;
 
-const COMLAB_STATION_IDS = ["08", "09", "10", "11"] as const;
+const COMLAB_STATION_IDS = ["08", "09", "10", "11", "12"] as const;
 
 async function cloudCall<T>(
   url: string,
@@ -363,6 +379,77 @@ async function attendanceListCloud(comlabId: string, limit: number): Promise<unk
     limit,
   });
   return Array.isArray(data.rows) ? data.rows : [];
+}
+
+const ATTENDANCE_LIMIT = 500;
+
+function getLocalAttendance(): AttendanceSessionRow[] {
+  const v = store.get("attendanceSessions") as AttendanceSessionRow[] | undefined;
+  return Array.isArray(v) ? v : [];
+}
+
+function setLocalAttendance(rows: AttendanceSessionRow[]): void {
+  store.set("attendanceSessions", rows.slice(-ATTENDANCE_LIMIT));
+}
+
+function attendanceDedupeKey(row: { studentEmail?: string; comlabId?: string; timeIn?: string | null }): string {
+  return `${row.studentEmail ?? ""}\0${row.comlabId ?? ""}\0${row.timeIn ?? ""}`;
+}
+
+/** Closes the most recent open local session for a student in a lab, if any. Returns its id. */
+function closeLocalOpenAttendanceSession(studentEmail: string, comlabId: string): string | null {
+  const nowIso = new Date().toISOString();
+  const rows = getLocalAttendance();
+  let matchedId: string | null = null;
+  for (let i = rows.length - 1; i >= 0; i--) {
+    if (rows[i].studentEmail === studentEmail && rows[i].comlabId === comlabId && !rows[i].timeOut) {
+      matchedId = rows[i].id;
+      break;
+    }
+  }
+  if (matchedId) {
+    setLocalAttendance(
+      getLocalAttendance().map((r) =>
+        r.id === matchedId ? { ...r, timeOut: nowIso, lastSeenAt: nowIso, synced: false } : r,
+      ),
+    );
+  }
+  return matchedId;
+}
+
+/**
+ * Best-effort push of session records recorded while offline. Stops at the
+ * first failure in a pass (cloud is likely still down) rather than retrying
+ * every row — the next opportunistic call picks up where this left off.
+ */
+async function flushPendingAttendance(): Promise<void> {
+  const pending = getLocalAttendance()
+    .filter((r) => !r.synced)
+    .sort((a, b) => a.timeIn.localeCompare(b.timeIn));
+  for (const row of pending) {
+    try {
+      await cloudCall(CLOUD_ENDPOINTS.audit, {
+        op: "attendance_check_in",
+        studentEmail: row.studentEmail,
+        comlabId: row.comlabId,
+        comlabLabel: row.comlabLabel,
+        workstationLabel: row.workstationLabel,
+        professorName: row.professorName,
+        timeIn: row.timeIn,
+      });
+      if (row.timeOut) {
+        await cloudCall(CLOUD_ENDPOINTS.audit, {
+          op: "attendance_check_out",
+          studentEmail: row.studentEmail,
+          comlabId: row.comlabId,
+        });
+      }
+      setLocalAttendance(getLocalAttendance().map((r) => (r.id === row.id ? { ...r, synced: true } : r)));
+    } catch (e) {
+      console.warn("[main] flushPendingAttendance: still offline, will retry later:", e);
+      break;
+    }
+  }
 }
 
 function getLabStationProfile(): LabStationProfile {
@@ -512,14 +599,23 @@ async function upsertApprovalsRemote(rows: ApprovalRequest[]): Promise<void> {
 }
 
 async function readQueueShared(): Promise<ApprovalRequest[]> {
-  const remote = await listApprovalsRemote();
-  setQueue(remote);
-  return remote;
+  try {
+    const remote = await listApprovalsRemote();
+    setQueue(remote);
+    return remote;
+  } catch (e) {
+    console.warn("[main] readQueueShared: cloud unavailable — using local cache:", e);
+    return getQueue();
+  }
 }
 
 async function writeQueueShared(rows: ApprovalRequest[]): Promise<void> {
   setQueue(rows);
-  await upsertApprovalsRemote(rows);
+  try {
+    await upsertApprovalsRemote(rows);
+  } catch (e) {
+    console.warn("[main] writeQueueShared: cloud sync failed — local state retained:", e);
+  }
 }
 
 function nextAuditId(): number {
@@ -635,16 +731,22 @@ async function upsertBlockedDomainRemote(domain: string): Promise<void> {
 }
 
 async function readBlockedDomainsShared(): Promise<string[]> {
-  const remote = await listBlockedDomainsRemote();
-  store.set("blockedDomains", remote);
-  return remote;
+  try {
+    const remote = await listBlockedDomainsRemote();
+    store.set("blockedDomains", remote);
+    return remote;
+  } catch (e) {
+    console.warn("[main] readBlockedDomainsShared: cloud unavailable — using local cache:", e);
+    const cached = store.get("blockedDomains") as string[] | undefined;
+    return Array.isArray(cached) ? cached : [];
+  }
 }
 
 function findRequest(id: string): ApprovalRequest | undefined {
   return getQueue().find((r) => r.id === id);
 }
 
-function executeAction(action: AgentAction): ActionExecutionResult {
+async function executeAction(action: AgentAction): Promise<ActionExecutionResult> {
   console.log("[main] executeAction", action.type, JSON.stringify(action.payload));
 
   if (action.type === "runa_create_folder") {
@@ -814,17 +916,61 @@ function executeAction(action: AgentAction): ActionExecutionResult {
     };
   }
 
-  if (
-    action.type === "wipe_terminal" ||
-    action.type === "lock_cluster" ||
-    action.type === "terminate_session" ||
-    action.type === "force_logout"
-  ) {
+  if (action.type === "lock_cluster") {
+    if (process.platform !== "win32") {
+      return {
+        ok: false,
+        status: "hard_failed",
+        message: "lock_cluster requires Windows (LockWorkStation is a Win32 API).",
+      };
+    }
+    try {
+      execFileSync("rundll32.exe", ["user32.dll,LockWorkStation"]);
+      return { ok: true, status: "executed", message: "Workstation locked (Win32 LockWorkStation)." };
+    } catch (e) {
+      return { ok: false, status: "hard_failed", message: e instanceof Error ? e.message : String(e) };
+    }
+  }
+
+  if (action.type === "terminate_session" || action.type === "force_logout") {
+    const prev = store.get("session");
+    if (prev?.role === "student") {
+      const station = getLabStationProfile();
+      closeLocalOpenAttendanceSession(prev.userId, station.comlabId);
+      try {
+        await attendanceCheckOutCloud(prev.userId, station.comlabId);
+      } catch (e) {
+        console.warn("[main] executeAction terminate_session: attendance sync failed, retained locally:", e);
+      }
+    }
+    store.set("session", null);
+    syncStudentRuntimeEnforcement();
+    mainWindow?.webContents.send("session:force-logout");
     return {
-      ok: false,
-      status: "hard_failed",
-      message: `${action.type} is not implemented in this build (hard-fail).`,
+      ok: true,
+      status: "executed",
+      message: prev
+        ? `RUNA session terminated for ${prev.userId}; returned to login.`
+        : "No active RUNA session on this terminal; nothing to terminate.",
     };
+  }
+
+  if (action.type === "wipe_terminal") {
+    try {
+      const root = ensureVaultExists(app);
+      const entries = fsSync.readdirSync(root);
+      for (const entry of entries) {
+        fsSync.rmSync(path.join(root, entry), { recursive: true, force: true });
+      }
+      return {
+        ok: true,
+        status: "executed",
+        message: `Wiped RUNA-managed vault on this terminal (${entries.length} item(s) removed under Runa_Folder).`,
+        evidence: { itemsRemoved: entries.length },
+      };
+    } catch (e) {
+      return { ok: false, status: "hard_failed", message: e instanceof Error ? e.message : String(e) };
+    }
   }
 
   return { ok: true, status: "simulated", message: `Simulated non-sensitive action: ${action.type}` };
@@ -1097,7 +1243,7 @@ function registerIpcHandlers(): void {
     const cid = String(profile?.comlabId ?? "08").trim();
     const ws = String(profile?.workstationLabel ?? "PC-01").trim().slice(0, 64);
     if (!COMLAB_STATION_IDS.includes(cid as (typeof COMLAB_STATION_IDS)[number])) {
-      throw new Error("Invalid comlabId (use 08–11).");
+      throw new Error("Invalid comlabId (use 08–12).");
     }
     if (!ws) {
       throw new Error("workstationLabel required.");
@@ -1118,16 +1264,33 @@ function registerIpcHandlers(): void {
         professorName: string;
       },
     ) => {
-      const data = await cloudCall<{ ok?: boolean; error?: string }>(CLOUD_ENDPOINTS.audit, {
-        op: "attendance_check_in",
+      const nowIso = new Date().toISOString();
+      const local: AttendanceSessionRow = {
+        id: randomUUID(),
         studentEmail: payload.studentEmail,
         comlabId: payload.comlabId,
         comlabLabel: payload.comlabLabel ?? "",
         workstationLabel: payload.workstationLabel ?? "",
         professorName: payload.professorName ?? "",
-      });
-      if (data && "ok" in data && data.ok === false) {
-        throw new Error(data.error ?? "attendance_check_in failed");
+        timeIn: nowIso,
+        timeOut: null,
+        lastSeenAt: nowIso,
+        synced: false,
+      };
+      setLocalAttendance([...getLocalAttendance(), local]);
+      try {
+        await cloudCall(CLOUD_ENDPOINTS.audit, {
+          op: "attendance_check_in",
+          studentEmail: local.studentEmail,
+          comlabId: local.comlabId,
+          comlabLabel: local.comlabLabel,
+          workstationLabel: local.workstationLabel,
+          professorName: local.professorName,
+          timeIn: local.timeIn,
+        });
+        setLocalAttendance(getLocalAttendance().map((r) => (r.id === local.id ? { ...r, synced: true } : r)));
+      } catch (e) {
+        console.warn("[main] attendance:checkIn: offline — recorded locally, will sync later:", e);
       }
       return true;
     },
@@ -1136,18 +1299,44 @@ function registerIpcHandlers(): void {
   ipcMain.handle(
     "attendance:checkOut",
     async (_e, payload: { studentEmail: string; comlabId: string }) => {
-      await attendanceCheckOutCloud(payload.studentEmail, payload.comlabId);
+      const matchedId = closeLocalOpenAttendanceSession(payload.studentEmail, payload.comlabId);
+      try {
+        await attendanceCheckOutCloud(payload.studentEmail, payload.comlabId);
+        if (matchedId) {
+          setLocalAttendance(getLocalAttendance().map((r) => (r.id === matchedId ? { ...r, synced: true } : r)));
+        }
+      } catch (e) {
+        console.warn("[main] attendance:checkOut: offline — recorded locally, will sync later:", e);
+      }
       return true;
     },
   );
 
   ipcMain.handle("attendance:list", async (_e, comlabId: string, limit = 500) => {
+    const cid = String(comlabId || "08").trim();
+    const cap = Math.min(1000, Math.max(1, limit));
+    let remoteRows: AttendanceSessionRow[] = [];
+    let cloudOk = false;
     try {
-      return await attendanceListCloud(String(comlabId || "08").trim(), Math.min(1000, Math.max(1, limit)));
+      remoteRows = (await attendanceListCloud(cid, cap)) as AttendanceSessionRow[];
+      cloudOk = true;
     } catch (e) {
-      console.warn("[main] attendance:list failed:", e);
-      return [];
+      console.warn("[main] attendance:list: cloud unavailable — using local cache:", e);
     }
+    if (cloudOk) {
+      void flushPendingAttendance();
+    }
+    const localRows = getLocalAttendance().filter((r) => r.comlabId === cid);
+    const merged = new Map<string, AttendanceSessionRow>();
+    for (const r of remoteRows) merged.set(attendanceDedupeKey(r), { ...r, synced: true });
+    for (const r of localRows) {
+      const key = attendanceDedupeKey(r);
+      if (!merged.has(key)) merged.set(key, r);
+    }
+    return Array.from(merged.values())
+      .sort((a, b) => (b.timeIn ?? "").localeCompare(a.timeIn ?? ""))
+      .slice(0, cap)
+      .map(({ synced: _synced, ...rest }) => rest);
   });
 
   // ── Settings ────────────────────────────────
@@ -1677,7 +1866,7 @@ function registerIpcHandlers(): void {
         return { autoExecuted: false, tier, request };
       }
 
-      const result = executeAction(action);
+      const result = await executeAction(action);
       logEvent({
         eventType: result.ok ? "action_executed" : "action_hard_failed",
         detail: JSON.stringify({
@@ -1755,7 +1944,7 @@ function registerIpcHandlers(): void {
           approvedBy: args.approverUserId,
         },
       };
-      const result = executeAction(approvedAction);
+      const result = await executeAction(approvedAction);
       logEvent({
         eventType: result.ok ? "action_executed" : "action_hard_failed",
         detail: JSON.stringify({
@@ -1777,6 +1966,13 @@ function registerIpcHandlers(): void {
 
   // ── Security policy helpers ───────────────────
   ipcMain.handle("security:list-blocked-domains", async () => readBlockedDomainsShared());
+
+  ipcMain.handle("security:list-quarantined-usb", () => {
+    const v = store.get("quarantinedUsbEvents") as
+      | Array<{ at: number; device: string; reason: string; approvalId?: string }>
+      | undefined;
+    return Array.isArray(v) ? [...v].sort((a, b) => b.at - a.at) : [];
+  });
 
   ipcMain.handle("security:check-url", async (_e, rawUrl: string) => {
     const domain = normalizeDomain(rawUrl);
@@ -1897,6 +2093,17 @@ app.on("window-all-closed", () => {
 });
 
 app.on("before-quit", () => {
+  try {
+    const session = store.get("session") as StoreSchema["session"];
+    if (session?.role === "student" && session.userId) {
+      const profile = getLabStationProfile();
+      closeLocalOpenAttendanceSession(session.userId, profile.comlabId);
+      // Best-effort; don't block app quit on a network round trip.
+      void attendanceCheckOutCloud(session.userId, profile.comlabId).catch(() => {});
+    }
+  } catch (e) {
+    console.warn("[main] before-quit: attendance checkout failed:", e);
+  }
   if (stopStudentEnforcement) {
     stopStudentEnforcement();
     stopStudentEnforcement = null;

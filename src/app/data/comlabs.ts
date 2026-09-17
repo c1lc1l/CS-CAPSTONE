@@ -3,7 +3,7 @@
  * Deterministic values (no Math.random) so demos and screenshots reproduce.
  */
 
-export const COMLAB_IDS = ["08", "09", "10", "11"] as const;
+export const COMLAB_IDS = ["08", "09", "10", "11", "12"] as const;
 export type ComlabId = (typeof COMLAB_IDS)[number];
 
 export type DashboardTerminalStatus = "active" | "idle" | "alert" | "offline" | "blocked";
@@ -89,6 +89,21 @@ export const COMLAB_DEFINITIONS: readonly ComlabDefinition[] = [
     alertIdx: -1,
     blockedIdx: 25,
   },
+  {
+    id: "12",
+    label: "COMLAB 12",
+    auditLogKey: "COMLAB 12",
+    subject: "Networking & IT Support",
+    professorName: "Prof. Diego Villanueva",
+    timeRange: "14:00 — 17:00",
+    utilizationPercent: 45,
+    incidentCount: 0,
+    healthLabel: "HEALTHY",
+    gridRows: 4,
+    gridCols: 8,
+    alertIdx: -1,
+    blockedIdx: -1,
+  },
 ] as const;
 
 export function getComlab(id: string): ComlabDefinition {
@@ -147,7 +162,7 @@ export function buildAccessNodes(def: ComlabDefinition): { id: string; status: A
     "normal",
     "normal",
   ];
-  const off = def.id === "08" ? 0 : def.id === "09" ? 2 : def.id === "10" ? 4 : 6;
+  const off = def.id === "08" ? 0 : def.id === "09" ? 2 : def.id === "10" ? 4 : def.id === "11" ? 6 : 8;
   return Array.from({ length: 40 }, (_, i) => {
     const status = cycle[(i + off) % cycle.length];
     const labNum = parseInt(def.id, 10);
@@ -196,6 +211,10 @@ export const ATTENDANCE_BY_LAB: Record<ComlabId, AttendanceRow[]> = {
     { name: "Garcia, Ana", id: "202401122", pc: "PC-03", ip: "192.168.11.103", status: "ONLINE", color: "#4ac77e" },
     { name: "Navarro, Eli", id: "202388901", pc: "PC-22", ip: "192.168.11.122", status: "ONLINE", color: "#4ac77e" },
     { name: "Fernandez, Pat", id: "202355432", pc: "PC-27", ip: "192.168.11.127", status: "ONLINE", color: "#4ac77e" },
+  ],
+  "12": [
+    { name: "Villanueva, Marco", id: "202398211", pc: "PC-06", ip: "192.168.12.106", status: "ONLINE", color: "#4ac77e" },
+    { name: "Aquino, Bea", id: "202267412", pc: "PC-17", ip: "192.168.12.117", status: "ONLINE", color: "#4ac77e" },
   ],
 };
 

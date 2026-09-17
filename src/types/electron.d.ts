@@ -118,7 +118,7 @@ export type ElectronProposeResult =
   | {
       autoExecuted: true;
       tier: ElectronRiskTier;
-      result: { ok: boolean; message: string };
+      result: { ok: boolean; message: string; evidence?: Record<string, unknown> };
     }
   | {
       autoExecuted: false;
@@ -146,7 +146,7 @@ export interface PythonResult<T = unknown> {
   error?: string;
 }
 
-interface ElectronAPI {
+export interface ElectronAPI {
   session: {
     get(): Promise<ElectronSession | null>;
     set(payload: ElectronSession): Promise<boolean>;
@@ -285,6 +285,7 @@ interface ElectronAPI {
       domain: string;
       reason: "policy_blocked" | "allowed" | "invalid_url";
     }>;
+    listQuarantinedUsb(): Promise<Array<{ at: number; device: string; reason: string; approvalId?: string }>>;
   };
   on(channel: string, listener: (...args: unknown[]) => void): void;
   off(channel: string, listener: (...args: unknown[]) => void): void;

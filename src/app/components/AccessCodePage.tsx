@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router";
 import { Shield, Fingerprint, Lock, ArrowRight, ArrowLeft } from "lucide-react";
 import { useElectron } from "../ipc/useElectron";
-import { DEMO_USERS } from "../auth/demoUsers";
+import { getComlab } from "../data/comlabs";
 
 const MONO = "'Share Tech Mono', monospace";
 const BRAND = "'Orbitron', sans-serif";
@@ -60,9 +60,11 @@ const ACCESS_SESSION_MS = 8 * 60 * 60 * 1000;
 
 export function AccessCodePage() {
   const navigate = useNavigate();
-  const sessionApi = useElectron().session;
+  const api = useElectron();
+  const sessionApi = api.session;
   const [code, setCode] = useState<string[]>(Array(CODE_LENGTH).fill(""));
   const [error, setError] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   useEffect(() => {
@@ -116,25 +118,51 @@ export function AccessCodePage() {
 
   const handleValidate = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (submitting) return;
     const filled = code.filter((c) => c !== "").length;
     if (filled < CODE_LENGTH) {
       setError(true);
       return;
     }
-    const student = DEMO_USERS.find((u) => u.role === "student");
-    if (!student) {
-      setError(true);
-      return;
+    setSubmitting(true);
+    try {
+      const codeStr = code.join("");
+      // Pseudonymous identity bound to the proctor-issued code itself — no
+      // real student account is required, and the code (not a name) is what
+      // ties the session to attendance/audit records.
+      const pseudonym = `guest-${codeStr}@runa.access`;
+      const now = Date.now();
+      await sessionApi.set({
+        userId: pseudonym,
+        role: "student",
+        token: `access-${crypto.randomUUID()}`,
+        persistent: false,
+        expiresAt: now + ACCESS_SESSION_MS,
+      });
+      try {
+        const station = await api.labStation.get();
+        const def = getComlab(station.comlabId);
+        await api.attendance.checkIn({
+          studentEmail: pseudonym,
+          comlabId: def.id,
+          comlabLabel: def.label,
+          workstationLabel: station.workstationLabel,
+          professorName: def.professorName,
+        });
+      } catch {
+        /* attendance sync is best-effort, same as the normal login path */
+      }
+      await api.audit.log({
+        eventType: "guest_access_login",
+        detail: JSON.stringify({ code: codeStr }),
+        actorUserId: pseudonym,
+        actorRole: "student",
+        riskTier: "low",
+      });
+      navigate("/student-dashboard");
+    } finally {
+      setSubmitting(false);
     }
-    const now = Date.now();
-    await sessionApi.set({
-      userId: student.email,
-      role: "student",
-      token: `access-${crypto.randomUUID()}`,
-      persistent: false,
-      expiresAt: now + ACCESS_SESSION_MS,
-    });
-    navigate("/student-dashboard");
   };
 
   return (

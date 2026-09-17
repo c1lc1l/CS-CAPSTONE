@@ -7,6 +7,7 @@ import { KioskBanner } from "./KioskBanner";
 import { StudentHitlSection } from "./StudentHitlSection";
 import { StudentAutomationLogSection } from "./StudentAutomationLogSection";
 import { RpaGovernanceSection } from "./RpaGovernanceSection";
+import { WorkflowStartersSection } from "./WorkflowStartersSection";
 import { useStudentRpaPanelData } from "./useStudentRpaPanelData";
 import { PANEL_SANS } from "./panelTokens";
 
@@ -17,6 +18,7 @@ export interface StudentRpaSidePanelProps {
   vaultPathFull: string | null;
   kioskMode: boolean | null;
   canEditShortcuts: boolean;
+  onSelectPrompt: (prompt: string) => void;
 }
 
 export function StudentRpaSidePanel({
@@ -26,6 +28,7 @@ export function StudentRpaSidePanel({
   vaultPathFull,
   kioskMode,
   canEditShortcuts,
+  onSelectPrompt,
 }: StudentRpaSidePanelProps) {
   const { pendingForStudent, recentApprovalHistory, recentAuditForStudent } = useStudentRpaPanelData(studentId);
 
@@ -44,6 +47,8 @@ export function StudentRpaSidePanel({
       />
 
       {kioskMode === true && <KioskBanner />}
+
+      <WorkflowStartersSection onSelectPrompt={onSelectPrompt} />
 
       <StudentHitlSection pending={pendingForStudent} history={recentApprovalHistory} />
 

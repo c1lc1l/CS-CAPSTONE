@@ -99,7 +99,7 @@ function EventBadge({ event }: { event: SecurityEvent }) {
   );
 }
 
-type AuditSurface = "hardware" | "runa";
+type AuditSurface = "hardware" | "runa" | "reports";
 
 interface RunaAuditRow {
   id: number;
@@ -180,7 +180,7 @@ export function AuditTrailsPanel() {
   }, [electron]);
 
   useEffect(() => {
-    if (surface !== "runa") return;
+    if (surface !== "runa" && surface !== "reports") return;
     void refreshRuna();
   }, [surface, refreshRuna]);
 
@@ -328,9 +328,25 @@ export function AuditTrailsPanel() {
         >
           RUNA agent / HITL log
         </button>
+        <button
+          type="button"
+          onClick={() => setSurface("reports")}
+          className="px-3 py-1.5 rounded border transition-colors"
+          style={{
+            fontFamily: MONO,
+            fontSize: "10px",
+            borderColor: surface === "reports" ? "#3a6fff" : "#2a3a55",
+            color: surface === "reports" ? "#c5d5ea" : "#4a6080",
+            background: surface === "reports" ? "#162035" : "transparent",
+          }}
+        >
+          Reports
+        </button>
       </div>
 
-      {surface === "runa" ? (
+      {surface === "reports" ? (
+        <ReportsSurface rows={runaRows} />
+      ) : surface === "runa" ? (
         <div className="p-6 space-y-4">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div className="space-y-2 max-w-2xl">
@@ -893,6 +909,182 @@ export function AuditTrailsPanel() {
 
       </>
       )}
+    </div>
+  );
+}
+
+/**
+ * Reports surface — a read-model over the same audit_log rows the RUNA
+ * agent/HITL view already fetches. No new backend, no new storage; this
+ * just aggregates what's already there.
+ */
+function ReportsSurface({ rows }: { rows: RunaAuditRow[] }) {
+  const stats = useMemo(() => {
+    const byRisk: Record<string, number> = { low: 0, medium: 0, high: 0 };
+    const byEvent = new Map<string, number>();
+    let executed = 0;
+    let hardFailed = 0;
+    let approved = 0;
+    let rejected = 0;
+    let logins = 0;
+    let oldestMs = Infinity;
+    let newestMs = -Infinity;
+
+    for (const r of rows) {
+      const tier = (r.riskTier ?? r.threatLevel ?? "").toLowerCase();
+      if (tier === "low" || tier === "medium" || tier === "high") byRisk[tier] += 1;
+      byEvent.set(r.eventType, (byEvent.get(r.eventType) ?? 0) + 1);
+      if (r.eventType === "action_executed") executed += 1;
+      if (r.eventType === "action_hard_failed") hardFailed += 1;
+      if (r.eventType === "action_approved") approved += 1;
+      if (r.eventType === "action_rejected") rejected += 1;
+      if (r.eventType === "login" || r.eventType === "guest_access_login") logins += 1;
+      if (r.createdAt < oldestMs) oldestMs = r.createdAt;
+      if (r.createdAt > newestMs) newestMs = r.createdAt;
+    }
+
+    const topEvents = Array.from(byEvent.entries())
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 8);
+
+    const executionTotal = executed + hardFailed;
+    const executionSuccessRate = executionTotal > 0 ? Math.round((executed / executionTotal) * 100) : null;
+
+    return {
+      total: rows.length,
+      byRisk,
+      topEvents,
+      executed,
+      hardFailed,
+      executionSuccessRate,
+      approved,
+      rejected,
+      logins,
+      oldestMs: Number.isFinite(oldestMs) ? oldestMs : null,
+      newestMs: Number.isFinite(newestMs) ? newestMs : null,
+    };
+  }, [rows]);
+
+  const fmt = (ms: number | null) => (ms ? new Date(ms).toLocaleString() : "—");
+
+  const StatTile = ({ label, value, accent }: { label: string; value: string | number; accent?: string }) => (
+    <div className={`${ADMIN_PANEL_CLASS} p-4`} style={ADMIN_PANEL_STYLE}>
+      <p className="text-[#4a6080] mb-1" style={{ fontSize: "9px", fontFamily: MONO }}>
+        {label}
+      </p>
+      <p style={{ fontSize: "22px", fontFamily: MONO, color: accent ?? "#c5d5ea" }}>{value}</p>
+    </div>
+  );
+
+  return (
+    <div className="p-6 space-y-4">
+      <div className="space-y-1">
+        <p className="text-[#c5d5ea]" style={{ fontSize: "13px", fontFamily: GROTESK }}>
+          Institutional summary derived from the last {stats.total} audit event(s)
+        </p>
+        <p className="text-[#4a6080]" style={{ fontSize: "10px", fontFamily: MONO }}>
+          {fmt(stats.oldestMs)} → {fmt(stats.newestMs)}
+        </p>
+      </div>
+
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <StatTile label="TOTAL EVENTS" value={stats.total} />
+        <StatTile label="LOGINS / SESSIONS" value={stats.logins} />
+        <StatTile
+          label="EXECUTION SUCCESS"
+          value={stats.executionSuccessRate === null ? "—" : `${stats.executionSuccessRate}%`}
+          accent={
+            stats.executionSuccessRate === null
+              ? undefined
+              : stats.executionSuccessRate >= 80
+                ? "#4ac77e"
+                : "#e05c6a"
+          }
+        />
+        <StatTile label="HARD-FAILED ACTIONS" value={stats.hardFailed} accent={stats.hardFailed > 0 ? "#e05c6a" : undefined} />
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div className={`${ADMIN_PANEL_CLASS} p-4`} style={ADMIN_PANEL_STYLE}>
+          <p className="text-[#c5d5ea] mb-3" style={{ fontSize: "12px" }}>
+            Risk tier distribution
+          </p>
+          <div className="space-y-2">
+            {(["high", "medium", "low"] as const).map((tier) => {
+              const count = stats.byRisk[tier];
+              const pct = stats.total > 0 ? Math.round((count / stats.total) * 100) : 0;
+              const color = tier === "high" ? "#e05c6a" : tier === "medium" ? "#e8821a" : "#4ac77e";
+              return (
+                <div key={tier}>
+                  <div className="flex items-center justify-between mb-1">
+                    <span style={{ color, fontSize: "10px", fontFamily: MONO }}>{tier.toUpperCase()}</span>
+                    <span className="text-[#4a6080]" style={{ fontSize: "10px", fontFamily: MONO }}>
+                      {count} ({pct}%)
+                    </span>
+                  </div>
+                  <div className="h-1.5 rounded-full overflow-hidden" style={{ background: "#111d30" }}>
+                    <div className="h-full rounded-full" style={{ width: `${pct}%`, background: color }} />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        <div className={`${ADMIN_PANEL_CLASS} p-4`} style={ADMIN_PANEL_STYLE}>
+          <p className="text-[#c5d5ea] mb-3" style={{ fontSize: "12px" }}>
+            HITL decisions
+          </p>
+          <div className="flex items-center gap-6">
+            <div>
+              <p className="text-[#4a6080]" style={{ fontSize: "9px", fontFamily: MONO }}>
+                APPROVED
+              </p>
+              <p style={{ fontSize: "20px", fontFamily: MONO, color: "#4ac77e" }}>{stats.approved}</p>
+            </div>
+            <div>
+              <p className="text-[#4a6080]" style={{ fontSize: "9px", fontFamily: MONO }}>
+                REJECTED
+              </p>
+              <p style={{ fontSize: "20px", fontFamily: MONO, color: "#e05c6a" }}>{stats.rejected}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className={`${ADMIN_PANEL_CLASS} p-4`} style={ADMIN_PANEL_STYLE}>
+        <p className="text-[#c5d5ea] mb-3" style={{ fontSize: "12px" }}>
+          Most frequent events
+        </p>
+        {stats.topEvents.length === 0 ? (
+          <p className="text-[#4a6080]" style={{ fontSize: "10px", fontFamily: MONO }}>
+            No audit events in the current sample.
+          </p>
+        ) : (
+          <div className="space-y-2">
+            {stats.topEvents.map(([eventType, count]) => {
+              const pct = stats.total > 0 ? Math.round((count / stats.total) * 100) : 0;
+              return (
+                <div key={eventType} className="flex items-center gap-3">
+                  <span className="w-40 shrink-0 text-[#c5d5ea] truncate" style={{ fontSize: "10px", fontFamily: MONO }}>
+                    {eventType}
+                  </span>
+                  <div className="flex-1 h-1.5 rounded-full overflow-hidden" style={{ background: "#111d30" }}>
+                    <div className="h-full rounded-full" style={{ width: `${pct}%`, background: "#3a6fff" }} />
+                  </div>
+                  <span className="w-10 text-right text-[#4a6080]" style={{ fontSize: "10px", fontFamily: MONO }}>
+                    {count}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      <p className="text-[#2a3a55]" style={{ fontSize: "9px", fontFamily: MONO }}>
+        Read-model over the shared audit_log — no separate reporting store. Refreshes with the RUNA agent / HITL log tab.
+      </p>
     </div>
   );
 }

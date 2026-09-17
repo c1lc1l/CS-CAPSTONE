@@ -11,6 +11,7 @@
  */
 
 import type { AgentAction, ApprovalRequest, RiskTier } from "./types";
+import type { ElectronRole, ElectronActorRole } from "../../types/electron";
 
 const electronAPI = (typeof window !== "undefined" ? window.electronAPI : undefined);
 
@@ -24,7 +25,7 @@ export type ProposeResult =
   | {
       autoExecuted: true;
       tier: RiskTier;
-      result: { ok: boolean; message: string };
+      result: { ok: boolean; message: string; evidence?: Record<string, unknown> };
     }
   | {
       autoExecuted: false;
@@ -38,12 +39,25 @@ export async function proposeAction(
   requesterRole: ElectronRole,
   evidence?: ApprovalRequest["evidence"],
 ): Promise<ProposeResult> {
-  return (await window.electronAPI.agent.propose({
+  const res = (await window.electronAPI.agent.propose({
     action,
     requesterId,
     requesterRole,
     evidence,
   })) as ProposeResult;
+
+  if (!res.autoExecuted) {
+    try {
+      window.electronAPI.tray.notify(
+        `Approval needed (${res.tier.toUpperCase()})`,
+        `${action.type} requested by ${requesterId} — review in Approvals Queue.`,
+      );
+    } catch {
+      /* tray is best-effort; never block the proposal on it */
+    }
+  }
+
+  return res;
 }
 
 export async function listPending(): Promise<ApprovalRequest[]> {

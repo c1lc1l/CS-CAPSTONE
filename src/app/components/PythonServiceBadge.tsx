@@ -3,7 +3,14 @@ import { useElectron } from "../ipc/useElectron";
 
 const MONO = "'Share Tech Mono', monospace";
 
-type HealthBody = { status?: string; clamd?: boolean; usb?: boolean; timestamp?: number };
+type DefinitionsStatus = { engine?: "clamd" | "stub"; definitions?: string | null; detail?: string };
+type HealthBody = {
+  status?: string;
+  clamd?: boolean;
+  usb?: boolean;
+  timestamp?: number;
+  definitionsStatus?: DefinitionsStatus;
+};
 
 /**
  * Polls `GET /health` on the bundled Python sidecar. Read-only; safe when
@@ -49,7 +56,7 @@ export function PythonServiceBadge() {
       style={{ background: "#111d30" }}
       title={
         health
-          ? `clamd=${String(health.clamd)} usb=${String(health.usb)}`
+          ? health.definitionsStatus?.detail ?? `clamd=${String(health.clamd)} usb=${String(health.usb)}`
           : reachable === false
             ? "Start python-service or check FLASK_PORT"
             : "Python microservice health"
@@ -61,7 +68,10 @@ export function PythonServiceBadge() {
       </span>
       {health && reachable && (
         <span className="text-[#4a6080] hidden sm:inline" style={{ fontSize: "8px", fontFamily: MONO }}>
-          clam {health.clamd ? "on" : "off"} · usb {health.usb ? "on" : "off"}
+          {health.definitionsStatus?.engine === "clamd"
+            ? `defs ${health.definitionsStatus.definitions ?? "unknown"}`
+            : "engine: stub (no ClamAV)"}{" "}
+          · usb {health.usb ? "on" : "off"}
         </span>
       )}
     </div>

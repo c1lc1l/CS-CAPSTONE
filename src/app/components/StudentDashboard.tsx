@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import { NotificationsMenu } from "../providers/NotificationProvider";
 import { useNotificationContext } from "../providers/NotificationProvider";
-import { ProductivityAssistant } from "./agentic/ProductivityAssistant";
+import { ProductivityAssistant, type ProductivityAssistantHandle } from "./agentic/ProductivityAssistant";
 import { StudentRpaSidePanel } from "./student/rpaSidePanel/StudentRpaSidePanel";
 import { useElectron } from "../ipc/useElectron";
 import { findDemoUser } from "../auth/demoUsers";
@@ -63,6 +63,7 @@ export function StudentDashboard() {
   const navigate = useNavigate();
   const api = useElectron();
   const { pushToast } = useNotificationContext();
+  const assistantRef = useRef<ProductivityAssistantHandle>(null);
   const [secondsUsed, setSecondsUsed] = useState(0);
   const [studentId, setStudentId] = useState("");
   const [studentDisplayName, setStudentDisplayName] = useState("Student");
@@ -209,6 +210,13 @@ export function StudentDashboard() {
   };
 
   const handleLogout = async () => {
+    if (studentId) {
+      try {
+        await api.attendance.checkOut({ studentEmail: studentId, comlabId: labComlabId });
+      } catch {
+        /* best-effort; checkOut itself never throws, but guard regardless */
+      }
+    }
     await api.session.clear();
     navigate("/");
   };
@@ -639,6 +647,7 @@ export function StudentDashboard() {
           </div>
           <div className="flex-1 min-h-0 p-4 pt-2 box-border flex flex-col">
             <ProductivityAssistant
+              ref={assistantRef}
               role="student"
               userId={studentId || "student@runa.edu.ph"}
               sessionExpiresAt={sessionExpiresAt}
@@ -655,6 +664,7 @@ export function StudentDashboard() {
           vaultPathFull={vaultPath}
           kioskMode={kioskMode}
           canEditShortcuts={canEditShortcuts}
+          onSelectPrompt={(prompt) => assistantRef.current?.setComposerText(prompt)}
         />
       </div>
 

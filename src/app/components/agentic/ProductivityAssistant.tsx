@@ -73,8 +73,10 @@ interface ChatMessage {
 interface StubResponse {
   text: string;
   toolUsed?: string;
-  /** If set, this is a HIGH-risk proposal — route through proposeAction. */
+  /** If set, route through proposeAction (HIGH-risk → HITL; LOW/MEDIUM may auto-execute). */
   proposeActionType?: ActionType;
+  /** Extra structured fields merged into the proposed action's payload (e.g. relativePath, content). */
+  actionPayload?: Record<string, unknown>;
   refused?: boolean;
 }
 
@@ -119,6 +121,74 @@ function stubRespond(prompt: string, role: AgentRole): StubResponse {
         text: "Sending email or submitting to an external system is not done automatically. I will queue this for lab staff review (human-in-the-loop). You can still copy text yourself and submit manually.",
         proposeActionType: "student_hitl_escalation",
       };
+    }
+
+    // ── Runa_Folder vault operations ────────────────────────
+    {
+      const mkFolder = p.match(/(?:create|make)\s+(?:a\s+)?folder\s+(?:called|named)?\s*"?([a-z0-9 _\-./]{1,80})"?/i);
+      if (mkFolder) {
+        const relativePath = mkFolder[1].trim();
+        return {
+          text: `Creating folder "${relativePath}" under Runa_Folder.`,
+          toolUsed: "vault_create_folder",
+          proposeActionType: "runa_create_folder",
+          actionPayload: { relativePath },
+        };
+      }
+
+      const writeFile = p.match(/(?:write|save)\s+"(.+?)"\s+(?:to|as|in)\s+"?([a-z0-9 _\-./]{1,80}\.[a-z0-9]{1,10})"?/i);
+      if (writeFile) {
+        const [, content, relativePath] = writeFile;
+        return {
+          text: `Writing "${relativePath.trim()}" under Runa_Folder.`,
+          toolUsed: "vault_write_file",
+          proposeActionType: "runa_write_file",
+          actionPayload: { relativePath: relativePath.trim(), content },
+        };
+      }
+
+      const readFile = p.match(/(?:read|open|show)\s+(?:the\s+)?file\s+"?([a-z0-9 _\-./]{1,80}\.[a-z0-9]{1,10})"?/i);
+      if (readFile) {
+        const relativePath = readFile[1].trim();
+        return {
+          text: `Reading "${relativePath}" from Runa_Folder.`,
+          toolUsed: "vault_read_file",
+          proposeActionType: "runa_read_file",
+          actionPayload: { relativePath },
+        };
+      }
+
+      const deleteFile = p.match(/delete\s+(?:the\s+)?file\s+"?([a-z0-9 _\-./]{1,80}\.[a-z0-9]{1,10})"?/i);
+      if (deleteFile) {
+        const relativePath = deleteFile[1].trim();
+        return {
+          text: `Deleting "${relativePath}" is a MEDIUM-risk action — queued for lab staff review before it happens.`,
+          toolUsed: "vault_delete_file",
+          proposeActionType: "runa_delete_within_vault",
+          actionPayload: { relativePath },
+        };
+      }
+
+      const moveFile = p.match(/move\s+(?:the\s+)?file\s+"?([a-z0-9 _\-./]{1,80})"?\s+to\s+"?([a-z0-9 _\-./]{1,80})"?/i);
+      if (moveFile) {
+        const [, fromRelative, toRelative] = moveFile;
+        return {
+          text: `Moving "${fromRelative.trim()}" to "${toRelative.trim()}" under Runa_Folder.`,
+          toolUsed: "vault_move_file",
+          proposeActionType: "runa_move_within_vault",
+          actionPayload: { fromRelative: fromRelative.trim(), toRelative: toRelative.trim() },
+        };
+      }
+
+      // Read-only listing has no governed action type — handled directly by
+      // the caller via runaFiles.listDir, flagged by this toolUsed marker.
+      if (/(?:list|show)\s+(?:my\s+)?files/i.test(p)) {
+        return {
+          text: "Listing files under Runa_Folder.",
+          toolUsed: "vault_list_files",
+          actionPayload: {},
+        };
+      }
     }
     if (/explain.*(big[\s-]?o|complexity|algorithm)/.test(p))
       return {
@@ -444,6 +514,30 @@ export const ProductivityAssistant = forwardRef<ProductivityAssistantHandle, Pro
 
     const stub = stubRespond(text, role);
 
+    if (stub.toolUsed === "vault_list_files") {
+      const listing = await electron.runaFiles.listDir("");
+      const body = listing.ok
+        ? listing.entries.length > 0
+          ? listing.entries.map((e) => `  • ${e}`).join("\n")
+          : "  (empty)"
+        : `Could not list Runa_Folder: ${listing.error ?? "unknown error"}`;
+      setMessages((m) => [
+        ...m,
+        {
+          id: `a-${Date.now()}`,
+          from: "assistant",
+          text: `${stub.text}\n\n${body}`,
+          ts: Date.now(),
+          riskTier: "low",
+          toolUsed: "vault_list_files",
+        },
+      ]);
+      // No separate logAudit here — runaFiles:listDir already logs
+      // "runa_files_list" in main.ts; a second entry would double-count it.
+      setBusy(false);
+      return;
+    }
+
     if (stub.proposeActionType) {
       const isStudentEscalation = stub.proposeActionType === "student_hitl_escalation";
       const proposeRes = await proposeAction(
@@ -454,6 +548,7 @@ export const ProductivityAssistant = forwardRef<ProductivityAssistantHandle, Pro
           payload: {
             source: role === "admin" ? "admin_assistant" : "student_assistant",
             prompt: text.slice(0, 500),
+            ...(stub.actionPayload ?? {}),
           },
           confidence: 0.85,
           reasoning: `${role} assistant proposing ${stub.proposeActionType} from prompt: "${text.slice(0, 80)}"`,
@@ -464,12 +559,21 @@ export const ProductivityAssistant = forwardRef<ProductivityAssistantHandle, Pro
 
       if (proposeRes.autoExecuted) {
         const tier = proposeRes.tier;
+        const ok = proposeRes.result.ok;
+        let displayText = ok ? stub.text : `Could not complete that: ${proposeRes.result.message}`;
+        if (ok && stub.proposeActionType === "runa_read_file") {
+          const content = proposeRes.result.evidence?.content;
+          if (typeof content === "string") {
+            const clipped = content.length > 4000 ? `${content.slice(0, 4000)}\n…(truncated)` : content;
+            displayText = `${stub.text}\n\n---\n${clipped}`;
+          }
+        }
         setMessages((m) => [
           ...m,
           {
             id: `a-${Date.now()}`,
             from: "assistant",
-            text: stub.text,
+            text: displayText,
             ts: Date.now(),
             riskTier: tier,
             toolUsed: "propose_action",

@@ -24,6 +24,7 @@ import {
   listHistory,
 } from "../../agentic/approvalQueue";
 import { RiskBadge } from "./RiskBadge";
+import { useNotificationContext } from "../../providers/NotificationProvider";
 
 const MONO = "'Share Tech Mono', monospace";
 const GROTESK = "'Exo 2', sans-serif";
@@ -42,6 +43,7 @@ interface InfoModalState {
 }
 
 export function ApprovalsQueue({ currentAdminId, onChange }: ApprovalsQueueProps) {
+  const { pushToast } = useNotificationContext();
   const [pending, setPending] = useState<ApprovalRequest[]>([]);
   const [history, setHistory] = useState<ApprovalRequest[]>([]);
   const [tab, setTab] = useState<"pending" | "history">("pending");
@@ -65,9 +67,14 @@ export function ApprovalsQueue({ currentAdminId, onChange }: ApprovalsQueueProps
     setBusyId(req.id);
     try {
       const res = await approveRequest(req.id, currentAdminId);
-      console.log(`[ApprovalsQueue] Approved ${req.id}: ${res.result.message}`);
+      if (res.result.ok) {
+        pushToast(res.result.message, "success");
+      } else {
+        pushToast(`Approved, but execution failed: ${res.result.message}`, "error");
+      }
     } catch (err) {
       console.error("[ApprovalsQueue] Approve failed:", err);
+      pushToast(err instanceof Error ? err.message : "Approve failed", "error");
     } finally {
       setBusyId(null);
       await refresh();
@@ -80,8 +87,10 @@ export function ApprovalsQueue({ currentAdminId, onChange }: ApprovalsQueueProps
     setBusyId(req.id);
     try {
       await rejectRequest(req.id, currentAdminId);
+      pushToast("Request rejected.", "info");
     } catch (err) {
       console.error("[ApprovalsQueue] Reject failed:", err);
+      pushToast(err instanceof Error ? err.message : "Reject failed", "error");
     } finally {
       setBusyId(null);
       await refresh();

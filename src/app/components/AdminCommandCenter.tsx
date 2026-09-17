@@ -20,7 +20,16 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { COMLAB_IDS, buildMonitoringPcs, getComlab, type ComlabId } from "../data/comlabs";
+import {
+  COMLAB_IDS,
+  buildMonitoringPcs,
+  buildDashboardStatuses,
+  buildAccessNodes,
+  getComlab,
+  type ComlabId,
+  type DashboardTerminalStatus,
+  type AccessNodeStatus,
+} from "../data/comlabs";
 import { PRESENCE_LIVE_WINDOW_MS as PRESENCE_WINDOW_MS } from "../constants/presence";
 import { useAdminLab } from "../context/AdminLabContext";
 import { useElectron } from "../ipc/useElectron";
@@ -30,6 +39,22 @@ import { ADMIN_COMMAND_PANEL_CLASS, ADMIN_COMMAND_PANEL_STYLE, ADMIN_FONT_MONO, 
 const MONO = ADMIN_FONT_MONO;
 const GROTESK = ADMIN_FONT_SANS;
 const AI_HEALTH_TTL_MS = 120_000;
+
+const DASHBOARD_STATUS_COLOR: Record<DashboardTerminalStatus, string> = {
+  active: "#3a6fff",
+  idle: "#2a3a55",
+  alert: "#e05c6a",
+  offline: "#1a2235",
+  blocked: "#e8821a",
+};
+
+const ACCESS_NODE_COLOR: Record<AccessNodeStatus, string> = {
+  normal: "#4ac77e",
+  alert: "#e05c6a",
+  offline: "#1a2235",
+  blocked: "#e8821a",
+  scanning: "#7eb5f5",
+};
 
 type ServiceStatus = "online" | "unknown" | "offline";
 interface CommandAuditRow {
@@ -497,6 +522,24 @@ export function AdminCommandCenter({
     return actions.slice(0, 3);
   }, [liveStudentCount, pendingCount, riskData]);
 
+  const fleetWorkstationGrids = useMemo(
+    () =>
+      COMLAB_IDS.map((id) => {
+        const def = getComlab(id);
+        return { id, label: def.label, statuses: buildDashboardStatuses(def) };
+      }),
+    [],
+  );
+
+  const fleetAccessNodes = useMemo(
+    () =>
+      COMLAB_IDS.map((id) => {
+        const def = getComlab(id);
+        return { id, label: def.label, nodes: buildAccessNodes(def) };
+      }),
+    [],
+  );
+
   return (
     <div className="h-full overflow-y-auto" style={{ background: "#0d1320", fontFamily: GROTESK }}>
       <div className="px-6 pt-5 pb-4 border-b border-[#1a2640]" style={{ background: "#0f1828" }}>
@@ -734,6 +777,95 @@ export function AdminCommandCenter({
                   </div>
                 ))
               )}
+            </div>
+          </div>
+
+          {/* Row 4 — fleet-wide workstation heatmap + access governance strip */}
+          <div
+            className="rounded-[10px] p-5 border xl:col-span-6"
+            style={{ background: "#1a2640", borderColor: "rgba(58,111,255,0.15)" }}
+          >
+            <p className="text-[#c5d5ea] mb-3" style={{ fontSize: "13px" }}>
+              Fleet Workstation Heatmap
+            </p>
+            <div className="space-y-3">
+              {fleetWorkstationGrids.map((lab) => (
+                <div key={lab.id} className="flex items-center gap-3">
+                  <span
+                    className="w-20 shrink-0 text-[#4a6080] truncate"
+                    style={{ fontSize: "9px", fontFamily: MONO }}
+                  >
+                    {lab.label}
+                  </span>
+                  <div className="grid grid-cols-8 gap-1 flex-1">
+                    {lab.statuses.map((status, i) => (
+                      <span
+                        key={i}
+                        title={status}
+                        className="rounded-sm"
+                        style={{ background: DASHBOARD_STATUS_COLOR[status], aspectRatio: "1 / 1" }}
+                      />
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="flex items-center gap-4 mt-3 pt-3" style={{ borderTop: "1px solid #2a3a55" }}>
+              {(Object.keys(DASHBOARD_STATUS_COLOR) as DashboardTerminalStatus[]).map((status) => (
+                <div key={status} className="flex items-center gap-1.5">
+                  <span
+                    className="w-2 h-2 rounded-sm shrink-0"
+                    style={{ background: DASHBOARD_STATUS_COLOR[status] }}
+                  />
+                  <span className="text-[#4a6080]" style={{ fontSize: "8px", fontFamily: MONO }}>
+                    {status.toUpperCase()}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div
+            className="rounded-[10px] p-5 border xl:col-span-6"
+            style={{ background: "#1a2640", borderColor: "rgba(58,111,255,0.15)" }}
+          >
+            <p className="text-[#c5d5ea] mb-3" style={{ fontSize: "13px" }}>
+              Access Governance Strip
+            </p>
+            <div className="space-y-3">
+              {fleetAccessNodes.map((lab) => (
+                <div key={lab.id} className="flex items-center gap-3">
+                  <span
+                    className="w-20 shrink-0 text-[#4a6080] truncate"
+                    style={{ fontSize: "9px", fontFamily: MONO }}
+                  >
+                    {lab.label}
+                  </span>
+                  <div className="flex flex-wrap gap-1 flex-1">
+                    {lab.nodes.map((node) => (
+                      <span
+                        key={node.id}
+                        title={`${node.label}: ${node.status}`}
+                        className="rounded-full"
+                        style={{ background: ACCESS_NODE_COLOR[node.status], width: "6px", height: "6px" }}
+                      />
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="flex items-center gap-4 mt-3 pt-3 flex-wrap" style={{ borderTop: "1px solid #2a3a55" }}>
+              {(Object.keys(ACCESS_NODE_COLOR) as AccessNodeStatus[]).map((status) => (
+                <div key={status} className="flex items-center gap-1.5">
+                  <span
+                    className="w-2 h-2 rounded-full shrink-0"
+                    style={{ background: ACCESS_NODE_COLOR[status] }}
+                  />
+                  <span className="text-[#4a6080]" style={{ fontSize: "8px", fontFamily: MONO }}>
+                    {status.toUpperCase()}
+                  </span>
+                </div>
+              ))}
             </div>
           </div>
         </div>

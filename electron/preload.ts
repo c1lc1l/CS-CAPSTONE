@@ -236,10 +236,12 @@ const api = {
       url: string,
     ): Promise<{ ok: boolean; blocked: boolean; domain: string; reason: "policy_blocked" | "allowed" | "invalid_url" }> =>
       ipcRenderer.invoke("security:check-url", url),
+    listQuarantinedUsb: (): Promise<Array<{ at: number; device: string; reason: string; approvalId?: string }>> =>
+      ipcRenderer.invoke("security:list-quarantined-usb"),
   },
 
   on: (channel: string, listener: (...args: unknown[]) => void) => {
-    const validChannels = ["navigate", "notification:push", "usb:event"];
+    const validChannels = ["navigate", "notification:push", "usb:event", "session:force-logout"];
     if (validChannels.includes(channel)) {
       ipcRenderer.on(channel, (_event, ...args) => listener(...args));
     }

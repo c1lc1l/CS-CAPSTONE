@@ -74,6 +74,15 @@ export function Root() {
     return () => api.off("navigate", handler);
   }, [api, navigate]);
 
+  useEffect(() => {
+    const handler = () => {
+      void api.session.clear();
+      navigate("/", { replace: true });
+    };
+    api.on("session:force-logout", handler);
+    return () => api.off("session:force-logout", handler);
+  }, [api, navigate]);
+
   if (!ready) {
     return (
       <div className="h-full w-full min-h-0" style={{ background: "#0d1320" }} />

@@ -161,6 +161,7 @@ const browserStubs: ElectronAPI = {
       domain: "",
       reason: "invalid_url" as const,
     }),
+    listQuarantinedUsb: async () => [],
   },
   on: noop,
   off: noop,

@@ -201,6 +201,23 @@ def _get_usb_backend():
 # ─────────────────────────────────────────────
 #  Health
 # ─────────────────────────────────────────────
+def _clamd_definitions_status() -> dict:
+    """Best-effort ClamAV signature/version readout. Never raises."""
+    if not CLAMD_AVAILABLE:
+        return {"engine": "stub", "definitions": None, "detail": "ClamAV not installed on this host — running EICAR-only stub scanner"}
+    try:
+        cd = clamd.ClamdUnixSocket()
+        version_line = cd.version()  # e.g. "ClamAV 1.4.1/27500/Mon Jan  5 08:12:00 2026"
+        parts = version_line.split("/")
+        return {
+            "engine": "clamd",
+            "definitions": parts[1] if len(parts) > 1 else None,
+            "detail": version_line,
+        }
+    except Exception as e:
+        return {"engine": "clamd", "definitions": None, "detail": f"clamd unreachable: {e}"}
+
+
 @app.get("/health")
 def health():
     backend = _get_usb_backend() if USB_AVAILABLE else None
@@ -210,6 +227,7 @@ def health():
         usb=USB_AVAILABLE,
         usbBackendReady=backend is not None,
         lambdaConfigured=bool(AI_LAMBDA_URL),
+        definitionsStatus=_clamd_definitions_status(),
         timestamp=time.time(),
     )
 

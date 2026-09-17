@@ -12,6 +12,8 @@
  * Cross-reference: sprint/agentic-architecture.md §2-§5.
  */
 
+import type { ElectronRole } from "../../types/electron";
+
 export type RiskTier = "low" | "medium" | "high";
 
 /**

@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
-import { AlertTriangle, Users, Activity, X, Usb, Shield, ChevronRight } from "lucide-react";
+import { AlertTriangle, Users, Activity, X, Usb, Shield, ChevronRight, Power } from "lucide-react";
 import { useNotificationContext } from "../providers/NotificationProvider";
 import { useElectron } from "../ipc/useElectron";
 import { useAdminLab } from "../context/AdminLabContext";
@@ -85,13 +85,13 @@ export function LabMonitoringPanel() {
   const pcs = useMemo(() => {
     const overridden = pcsBase.map((p) => (idleOverrideIds.has(p.id) ? { ...p, status: "idle" as const } : p));
     const activeSlots = liveStudentIds.length;
-    if (activeSlots <= 0) {
-      return overridden.map((p) => ({ ...p, status: "offline" as const }));
-    }
-    return overridden.map((p, i) => ({
-      ...p,
-      status: i < activeSlots ? ("active" as const) : ("offline" as const),
-    }));
+    // Preserve idle overrides (post-containment) and the lab's seeded alert
+    // PC — only fill the remaining slots from live presence below.
+    return overridden.map((p, i) => {
+      if (p.status === "idle" || p.status === "alert") return p;
+      if (activeSlots <= 0) return { ...p, status: "offline" as const };
+      return { ...p, status: i < activeSlots ? ("active" as const) : ("offline" as const) };
+    });
   }, [pcsBase, idleOverrideIds, liveStudentIds]);
   const [showAlert, setShowAlert] = useState(true);
   const [expandedPC, setExpandedPC] = useState<string | null>(null);
@@ -103,11 +103,16 @@ export function LabMonitoringPanel() {
   const [usbDevices, setUsbDevices] = useState<UsbDevice[]>([]);
   const [usbError, setUsbError] = useState<string | null>(null);
   const [usbBackendReady, setUsbBackendReady] = useState(false);
+  const [quarantinedUsb, setQuarantinedUsb] = useState<
+    Array<{ at: number; device: string; reason: string; approvalId?: string }>
+  >([]);
   const [actorId, setActorId] = useState("admin");
   const [urlInput, setUrlInput] = useState("");
   const [blockedDomains, setBlockedDomains] = useState<string[]>([]);
   const [urlCheckBusy, setUrlCheckBusy] = useState(false);
   const [containBusy, setContainBusy] = useState(false);
+  const [terminateBusy, setTerminateBusy] = useState(false);
+  const [terminateConfirm, setTerminateConfirm] = useState(false);
   const [usbTimeline, setUsbTimeline] = useState<UsbTimelineState>({
     visible: false,
     deviceLabel: "",
@@ -118,6 +123,17 @@ export function LabMonitoringPanel() {
   });
   const seenUsbSignaturesRef = useRef<Set<string>>(new Set());
   const usbBaselineReadyRef = useRef(false);
+
+  const refreshQuarantinedUsb = useCallback(async () => {
+    const rows = await api.security.listQuarantinedUsb();
+    setQuarantinedUsb(rows);
+  }, [api]);
+
+  useEffect(() => {
+    void refreshQuarantinedUsb();
+    const id = setInterval(() => void refreshQuarantinedUsb(), 5000);
+    return () => clearInterval(id);
+  }, [refreshQuarantinedUsb]);
 
   const refreshBlockedDomains = useCallback(async () => {
     const rows = await api.security.listBlockedDomains();
@@ -259,6 +275,7 @@ export function LabMonitoringPanel() {
           actionAt,
           actionNote: `${proposal.result.message} (status: ${proposal.result.ok ? "executed" : "hard_failed"})`,
         }));
+        void refreshQuarantinedUsb();
       } else {
         setUsbTimeline((prev) => ({
           ...prev,
@@ -270,7 +287,7 @@ export function LabMonitoringPanel() {
         }));
       }
     },
-    [actorId, api, pushToast],
+    [actorId, api, pushToast, refreshQuarantinedUsb],
   );
 
   useEffect(() => {
@@ -559,6 +576,28 @@ export function LabMonitoringPanel() {
               ))}
             </ul>
           )}
+          {quarantinedUsb.length > 0 && (
+            <div className="mt-3 pt-3" style={{ borderTop: "1px solid #1e2e48" }}>
+              <div className="flex items-center gap-2 mb-2">
+                <Shield size={11} className="text-[#e05c6a]" />
+                <span className="text-[#e05c6a]" style={{ fontSize: "10px", fontFamily: MONO }}>
+                  QUARANTINED ({quarantinedUsb.length})
+                </span>
+              </div>
+              <ul className="flex flex-wrap gap-2 m-0 p-0 list-none">
+                {quarantinedUsb.slice(0, 8).map((q, i) => (
+                  <li
+                    key={`${q.at}-${i}`}
+                    className="px-2 py-1 rounded border"
+                    style={{ borderColor: "#e05c6a50", color: "#e05c6a", fontSize: "9px", fontFamily: MONO }}
+                    title={`Reason: ${q.reason}${q.approvalId ? ` · approval ${q.approvalId.slice(0, 8)}…` : ""}`}
+                  >
+                    {q.device} · {new Date(q.at).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
         </div>
 
         <div className={`${ADMIN_PANEL_CLASS} p-4`} style={ADMIN_PANEL_STYLE}>
@@ -751,12 +790,25 @@ export function LabMonitoringPanel() {
                 <Users size={13} className="text-[#3a6fff]" />
                 <span className="text-[#c5d5ea]" style={{ fontSize: "13px" }}>Live Attendance</span>
               </div>
-              <span
-                className="px-2 py-0.5 rounded"
-                style={{ background: "#1e3055", color: "#7eb5f5", fontSize: "9px", fontFamily: MONO }}
-              >
-                {activeCount} ACTIVE
-              </span>
+              <div className="flex items-center gap-2">
+                <span
+                  className="px-2 py-0.5 rounded"
+                  style={{ background: "#1e3055", color: "#7eb5f5", fontSize: "9px", fontFamily: MONO }}
+                >
+                  {activeCount} ACTIVE
+                </span>
+                <button
+                  type="button"
+                  className="flex items-center gap-1 px-2 py-0.5 rounded border transition-colors hover:bg-[#3a102080] disabled:opacity-50"
+                  style={{ borderColor: "#e05c6a50", color: "#e05c6a", fontSize: "9px", fontFamily: MONO }}
+                  disabled={terminateBusy || attendance.length === 0}
+                  onClick={() => setTerminateConfirm(true)}
+                  title="Force sign-out all active sessions in this lab (routed through HITL if not auto-executable)"
+                >
+                  <Power size={11} />
+                  FORCE SIGN-OUT
+                </button>
+              </div>
             </div>
             <div className="space-y-3">
               {attendance.map((a, i) => (
@@ -834,16 +886,22 @@ export function LabMonitoringPanel() {
                         actorId,
                         "admin",
                       );
-                      if (proposal.autoExecuted && proposal.result.ok) {
-                        pushToast(`Containment executed for ${target}`, "warn");
-                      } else if (proposal.autoExecuted) {
-                        pushToast(`Containment hard-failed: ${proposal.result.message}`, "error");
+                      if (proposal.autoExecuted) {
+                        if (proposal.result.ok) {
+                          pushToast(`Containment executed for ${target}`, "warn");
+                        } else {
+                          pushToast(`Containment hard-failed: ${proposal.result.message}`, "error");
+                        }
                       } else {
                         pushToast(`Containment queued for HITL: ${proposal.request.id.slice(0, 8)}…`, "warn");
                       }
                       await logAudit({
                         eventType: "containment_requested",
-                        detail: JSON.stringify({ targetPc: target, source: "system_flag", proposalId: proposal.request.id }),
+                        detail: JSON.stringify({
+                          targetPc: target,
+                          source: "system_flag",
+                          proposalId: proposal.autoExecuted ? null : proposal.request.id,
+                        }),
                         actorUserId: actorId,
                         actorRole: "admin",
                         riskTier: "high",
@@ -877,6 +935,70 @@ export function LabMonitoringPanel() {
             >
               <X size={14} />
             </button>
+          </div>
+        )}
+
+        {/* Force sign-out confirm modal */}
+        {terminateConfirm && (
+          <div className="fixed inset-0 z-[var(--z-modal)] flex items-center justify-center" style={{ background: "rgba(0,0,0,0.7)" }}>
+            <div className="rounded-xl p-6 border shadow-2xl" style={{ background: "#1a0d18", borderColor: "#e05c6a50", width: "340px" }}>
+              <div className="flex items-center gap-2 mb-3">
+                <Power size={16} className="text-[#e05c6a]" />
+                <span className="text-[#e05c6a]" style={{ fontSize: "14px" }}>Force Sign-out Active Sessions?</span>
+              </div>
+              <p className="text-[#a07080] mb-5" style={{ fontSize: "11px", fontFamily: MONO }}>
+                {`This signs out ${activeCount} active session${activeCount === 1 ? "" : "s"} in ${labDef.label}. Use after containment review.`}
+              </p>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => {
+                    void (async () => {
+                      setTerminateBusy(true);
+                      const proposal = await proposeAction(
+                        {
+                          type: "terminate_session",
+                          scope: "lab",
+                          reversible: false,
+                          payload: { labId: activeTab, sessionCount: activeCount },
+                          confidence: 0.9,
+                          reasoning: `Force sign-out requested for ${labDef.label}.`,
+                        },
+                        actorId,
+                        "admin",
+                      );
+                      if (proposal.autoExecuted && proposal.result.ok) {
+                        pushToast("Termination executed", "warn");
+                      } else if (proposal.autoExecuted) {
+                        pushToast(`Termination hard-failed: ${proposal.result.message}`, "error");
+                      } else {
+                        pushToast(`Termination queued for HITL: ${proposal.request.id.slice(0, 8)}…`, "warn");
+                      }
+                      await logAudit({
+                        eventType: "force_signout_requested",
+                        detail: JSON.stringify({ labId: activeTab, sessionCount: activeCount }),
+                        actorUserId: actorId,
+                        actorRole: "admin",
+                        riskTier: "high",
+                      });
+                      setTerminateBusy(false);
+                      setTerminateConfirm(false);
+                    })();
+                  }}
+                  className="flex-1 py-2 rounded-md text-white transition-colors disabled:opacity-50"
+                  style={{ background: "#e05c6a", fontSize: "11px", fontFamily: MONO }}
+                  disabled={terminateBusy}
+                >
+                  {terminateBusy ? "QUEUING..." : "FORCE SIGN-OUT"}
+                </button>
+                <button
+                  onClick={() => setTerminateConfirm(false)}
+                  className="flex-1 py-2 rounded-md border transition-colors"
+                  style={{ borderColor: "#2a3a55", color: "#4a6080", fontSize: "11px", fontFamily: MONO }}
+                >
+                  CANCEL
+                </button>
+              </div>
+            </div>
           </div>
         )}
       </div>
