@@ -199,6 +199,13 @@ const api = {
     }): Promise<boolean> => ipcRenderer.invoke("audit:log", args),
     list: (limit?: number): Promise<unknown[]> =>
       ipcRenderer.invoke("audit:list", limit),
+    verifyIntegrity: (): Promise<{
+      ok: boolean;
+      rowsChecked: number;
+      brokenAtIndex: number | null;
+      brokenRowId: number | null;
+      reason: string | null;
+    }> => ipcRenderer.invoke("audit:verify-integrity"),
   },
 
   agent: {

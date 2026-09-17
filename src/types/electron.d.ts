@@ -101,6 +101,15 @@ export interface ElectronAuditRow {
   confidenceScore?: number;
 }
 
+/** Result of recomputing the local audit hash chain. */
+export interface ElectronAuditChainReport {
+  ok: boolean;
+  rowsChecked: number;
+  brokenAtIndex: number | null;
+  brokenRowId: number | null;
+  reason: string | null;
+}
+
 /** Row from `lab_attendance_sessions` (Lambda returns camelCase). */
 export interface ElectronAttendanceSessionRow {
   id: string | number;
@@ -233,6 +242,7 @@ export interface ElectronAPI {
       confidenceScore?: number;
     }): Promise<boolean>;
     list(limit?: number): Promise<ElectronAuditRow[]>;
+    verifyIntegrity(): Promise<ElectronAuditChainReport>;
   };
   labStation: {
     get(): Promise<{ comlabId: string; workstationLabel: string }>;

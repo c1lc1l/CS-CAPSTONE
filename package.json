@@ -11,6 +11,7 @@
     "build:electron": "tsc -p tsconfig.electron.json",
     "build": "vite build && npm run build:electron",
     "build:win": "npm run build && electron-builder --win portable",
+    "test": "npm run build:electron && node electron/auditChain.test.mjs",
     "preview": "vite preview"
   },
   "dependencies": {

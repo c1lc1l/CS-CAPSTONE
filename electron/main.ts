@@ -10,7 +10,7 @@ import {
 } from "electron";
 import path from "path";
 import { spawn, execFileSync, ChildProcess } from "child_process";
-import { randomUUID } from "crypto";
+import { randomUUID, createHash } from "crypto";
 const Store = require("electron-store");
 import fsSync from "fs";
 import {
@@ -20,6 +20,7 @@ import {
   MAX_TEXT_FILE_BYTES,
 } from "./runaFiles";
 import { createStudentRuntimeEnforcement } from "./enforcement/studentRuntimeEnforcement";
+import { sealRow, verifyAuditChain } from "./auditChain";
 
 function loadRootEnvFile(): void {
   const candidates = [
@@ -149,6 +150,10 @@ interface AuditRow {
   approverUserId?: string;
   riskTier?: RiskTier;
   confidenceScore?: number;
+  /** SHA-256 of the preceding row's rowHash. GENESIS_HASH for the first row. */
+  prevHash?: string;
+  /** SHA-256 over this row's canonical content plus prevHash. */
+  rowHash?: string;
 }
 
 /** User-added OS shortcuts (.exe / .lnk); not pre-seeded by app defaults. */
@@ -643,7 +648,13 @@ function logEvent(row: Omit<AuditRow, "id" | "createdAt"> & { id?: number; creat
     riskTier: row.riskTier ?? threatLevel,
     confidenceScore: row.confidenceScore,
   };
-  setAuditRows([...getAuditRows(), full]);
+
+  // Link this row to the current tail before persisting, so the chain is
+  // sealed at write time rather than reconstructed later.
+  const existing = getAuditRows();
+  sealRow(full, existing[existing.length - 1]);
+
+  setAuditRows([...existing, full]);
   void insertAuditRemote(full);
   return full;
 }
@@ -1966,6 +1977,25 @@ function registerIpcHandlers(): void {
 
   // ── Security policy helpers ───────────────────
   ipcMain.handle("security:list-blocked-domains", async () => readBlockedDomainsShared());
+
+  ipcMain.handle("audit:verify-integrity", () => {
+    const report = verifyAuditChain(getAuditRows());
+    // The verification itself is an auditable act: record who checked and what
+    // the result was, so integrity checks are part of the trail they inspect.
+    const session = store.get("session");
+    logEvent({
+      eventType: report.ok ? "audit_integrity_verified" : "audit_integrity_failed",
+      detail: JSON.stringify({
+        rowsChecked: report.rowsChecked,
+        brokenRowId: report.brokenRowId,
+        reason: report.reason,
+      }),
+      actorUserId: session?.userId ?? "system",
+      actorRole: session?.role ?? "system",
+      riskTier: report.ok ? "low" : "high",
+    });
+    return report;
+  });
 
   ipcMain.handle("security:list-quarantined-usb", () => {
     const v = store.get("quarantinedUsbEvents") as

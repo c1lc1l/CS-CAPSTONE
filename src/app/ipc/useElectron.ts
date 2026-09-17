@@ -82,6 +82,13 @@ const browserStubs: ElectronAPI = {
   audit: {
     log: async () => true,
     list: async () => [],
+    verifyIntegrity: async () => ({
+      ok: true,
+      rowsChecked: 0,
+      brokenAtIndex: null,
+      brokenRowId: null,
+      reason: null,
+    }),
   },
   labStation: {
     get: async () => ({ comlabId: "08", workstationLabel: "PC-01" }),
