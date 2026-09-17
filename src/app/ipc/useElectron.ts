@@ -203,6 +203,8 @@ export interface AITaskPayload {
   useKnowledgeBase?: boolean;
   /** Chunk count for KB retrieval (1–12). */
   kbTopK?: number;
+  /** Provider function-calling schemas the model may select from. */
+  toolSpecs?: unknown[];
 }
 
 export interface AITaskResult {
@@ -218,6 +220,8 @@ export interface AITaskResult {
   detail?: string;
   ragCitations?: Array<{ id?: number; source?: string; title?: string; score?: number }>;
   ragUsed?: boolean;
+  /** Tools the model selected. Selection only — the client governs execution. */
+  toolCalls?: Array<{ name: string; arguments: Record<string, unknown> }>;
 }
 
 export function useAI() {

@@ -352,6 +352,9 @@ def ai_task():
     max_tokens: int = body.get("maxTokens", body.get("max_tokens", 1024))
     role: str = body.get("role", "student")
     tools = body.get("tools") or []
+    tool_specs = body.get("toolSpecs") or []
+    if not isinstance(tool_specs, list):
+        tool_specs = []
     history = body.get("history") or []
     temperature: float = body.get("temperature", 0.3)
     use_knowledge_base = body.get("useKnowledgeBase", True)
@@ -430,6 +433,7 @@ def ai_task():
             "system": system_override,
             "role": role,
             "tools": tools,
+            "toolSpecs": tool_specs,
             "history": history,
             "maxTokens": max_tokens,
             "temperature": temperature,
@@ -466,8 +470,16 @@ def ai_task():
         if not isinstance(rag_citations, list):
             rag_citations = []
         rag_used = bool(body.get("ragUsed"))
+        tool_calls = body.get("toolCalls")
+        if not isinstance(tool_calls, list):
+            tool_calls = []
 
-        log.info("ai-task completed (%d chars) via provider=lambda url=%s", len(text), AI_LAMBDA_URL)
+        log.info(
+            "ai-task completed (%d chars, %d tool call(s)) via provider=lambda url=%s",
+            len(text),
+            len(tool_calls),
+            AI_LAMBDA_URL,
+        )
         return jsonify(
             ok=True,
             response=text,
@@ -479,6 +491,7 @@ def ai_task():
             updatedHistory=updated_history,
             ragCitations=rag_citations,
             ragUsed=rag_used,
+            toolCalls=tool_calls,
         )
     except Exception as e:
         log.error("Lambda AI error: %s", e)
@@ -489,6 +502,7 @@ def ai_task():
             detail=f"lambda_error: {str(e)[:360]}",
             ragCitations=[],
             ragUsed=False,
+            toolCalls=[],
         )
 
 

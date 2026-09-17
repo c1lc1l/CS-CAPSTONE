@@ -9,6 +9,8 @@ GROQ_MODEL = os.environ.get("GROQ_MODEL", "llama-3.3-70b-versatile")
 DEMO_SHARED_TOKEN = os.environ.get("DEMO_SHARED_TOKEN", "").strip()
 GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
 MAX_HISTORY_TURNS = 24
+MAX_TOOL_SPECS = 16
+MAX_TOOL_CALLS = 4
 
 SUPABASE_URL = os.environ.get("SUPABASE_URL", "").strip().rstrip("/")
 SUPABASE_SERVICE_ROLE_KEY = os.environ.get("SUPABASE_SERVICE_ROLE_KEY", "").strip()
@@ -142,6 +144,35 @@ def _kb_context_block(chunks: list[dict]) -> str:
     return "\n".join(lines)
 
 
+def _normalize_tool_calls(raw):
+    """
+    Normalize provider tool_calls into a compact, client-safe shape.
+    Arguments arrive as a JSON string; invalid JSON is dropped rather than
+    forwarded, so the client never receives a half-formed action payload.
+    """
+    if not isinstance(raw, list):
+        return []
+    out = []
+    for item in raw[:MAX_TOOL_CALLS]:
+        if not isinstance(item, dict):
+            continue
+        fn = item.get("function") or {}
+        name = str(fn.get("name") or "").strip()
+        if not name:
+            continue
+        args = fn.get("arguments")
+        if isinstance(args, str):
+            try:
+                args = json.loads(args) if args.strip() else {}
+            except json.JSONDecodeError:
+                log.warning("tool_call_bad_arguments name=%s", name)
+                continue
+        if not isinstance(args, dict):
+            args = {}
+        out.append({"name": name, "arguments": args})
+    return out
+
+
 def _normalize_history(history):
     messages = []
     turns = history[-MAX_HISTORY_TURNS:] if isinstance(history, list) else []
@@ -200,6 +231,8 @@ def lambda_handler(event, _context):
     role = "admin" if body.get("role") == "admin" else "student"
     system = str(body.get("system", "")).strip()
     tools = body.get("tools") if isinstance(body.get("tools"), list) else []
+    tool_specs = body.get("toolSpecs") if isinstance(body.get("toolSpecs"), list) else []
+    tool_specs = [t for t in tool_specs if isinstance(t, dict)]
     history = body.get("history") if isinstance(body.get("history"), list) else []
     max_tokens = int(body.get("maxTokens", 1024) or 1024)
     temperature = float(body.get("temperature", 0.3) or 0.3)
@@ -258,6 +291,11 @@ def lambda_handler(event, _context):
             "max_tokens": max(64, min(max_tokens, 2048)),
             "temperature": max(0.0, min(temperature, 1.0)),
         }
+        # Native provider function-calling. The model may only SELECT a tool;
+        # execution and risk classification stay on the client governance path.
+        if tool_specs:
+            payload["tools"] = tool_specs[:MAX_TOOL_SPECS]
+            payload["tool_choice"] = "auto"
         req = request.Request(
             GROQ_URL,
             data=json.dumps(payload).encode("utf-8"),
@@ -293,7 +331,14 @@ def lambda_handler(event, _context):
 
         choice = (data.get("choices") or [{}])[0]
         message = choice.get("message") or {}
-        text = (message.get("content") or "").strip() or "No response content from model."
+        tool_calls = _normalize_tool_calls(message.get("tool_calls"))
+        text = (message.get("content") or "").strip()
+        if not text:
+            text = (
+                "Selected a tool for this request."
+                if tool_calls
+                else "No response content from model."
+            )
 
         usage = data.get("usage") or {}
         input_tokens = int(usage.get("prompt_tokens", 0) or 0)
@@ -326,6 +371,7 @@ def lambda_handler(event, _context):
                 "updatedHistory": updated_history,
                 "ragCitations": rag_citations,
                 "ragUsed": bool(use_knowledge_base and rag_citations),
+                "toolCalls": tool_calls,
             },
         )
     except Exception as exc:
@@ -342,5 +388,6 @@ def lambda_handler(event, _context):
                 "detail": str(exc)[:400],
                 "ragCitations": [],
                 "ragUsed": False,
+                "toolCalls": [],
             },
         )

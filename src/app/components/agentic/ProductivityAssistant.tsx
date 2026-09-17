@@ -30,6 +30,12 @@ import type { AgentRole, RiskTier, ToolDefinition } from "../../agentic/types";
 import { getAgentContext, findTool } from "../../agentic/toolRegistry";
 import { explainClassification } from "../../agentic/riskClassifier";
 import { proposeAction, logAudit } from "../../agentic/approvalQueue";
+import {
+  VAULT_TOOL_SPECS,
+  VAULT_LIST_TOOL,
+  resolveVaultToolCall,
+  type ResolvedVaultTool,
+} from "../../agentic/vaultTools";
 import { useAI, useElectron, type AIMessage as AIConversationMessage } from "../../ipc/useElectron";
 import { useNotificationContext } from "../../providers/NotificationProvider";
 import { RiskBadge } from "./RiskBadge";
@@ -384,6 +390,88 @@ export const ProductivityAssistant = forwardRef<ProductivityAssistantHandle, Pro
     }
   }, [messages]);
 
+  /**
+   * Runs a tool the model selected. The model's choice is treated exactly
+   * like a typed request: it goes through proposeAction, so classification,
+   * HITL routing, and audit logging all still apply.
+   */
+  const runVaultTool = async (
+    toolName: string,
+    resolved: ResolvedVaultTool | null,
+    prompt: string,
+  ) => {
+    if (toolName === VAULT_LIST_TOOL || !resolved) {
+      const listing = await electron.runaFiles.listDir("");
+      const body = listing.ok
+        ? listing.entries.length > 0
+          ? listing.entries.map((e) => `  • ${e}`).join("\n")
+          : "  (empty)"
+        : `Could not list Runa_Folder: ${listing.error ?? "unknown error"}`;
+      setMessages((m) => [
+        ...m,
+        {
+          id: `a-${Date.now()}`,
+          from: "assistant",
+          text: `Listing files under Runa_Folder.\n\n${body}`,
+          ts: Date.now(),
+          riskTier: "low",
+          toolUsed: "vault_list_files",
+        },
+      ]);
+      return;
+    }
+
+    const proposal = await proposeAction(
+      {
+        type: resolved.actionType,
+        scope: "self",
+        reversible: resolved.actionType !== "runa_delete_within_vault",
+        payload: { source: "student_assistant_tool_call", prompt: prompt.slice(0, 500), ...resolved.payload },
+        confidence: 0.85,
+        reasoning: `Model selected ${resolved.actionType} for prompt: "${prompt.slice(0, 80)}"`,
+      },
+      userId,
+      role,
+    );
+
+    if (proposal.autoExecuted) {
+      let displayText = proposal.result.ok
+        ? resolved.summary
+        : `Could not complete that: ${proposal.result.message}`;
+      if (proposal.result.ok && resolved.actionType === "runa_read_file") {
+        const content = proposal.result.evidence?.content;
+        if (typeof content === "string") {
+          const clipped = content.length > 4000 ? `${content.slice(0, 4000)}\n…(truncated)` : content;
+          displayText = `${resolved.summary}\n\n---\n${clipped}`;
+        }
+      }
+      setMessages((m) => [
+        ...m,
+        {
+          id: `a-${Date.now()}`,
+          from: "assistant",
+          text: displayText,
+          ts: Date.now(),
+          riskTier: proposal.tier,
+          toolUsed: "model_tool_call",
+        },
+      ]);
+    } else {
+      setMessages((m) => [
+        ...m,
+        {
+          id: `a-${Date.now()}`,
+          from: "assistant",
+          text: `${resolved.summary}\n\nApproval ID: ${proposal.request.id.slice(0, 8)}…`,
+          ts: Date.now(),
+          riskTier: proposal.tier,
+          toolUsed: "model_tool_call",
+          approvalId: proposal.request.id,
+        },
+      ]);
+    }
+  };
+
   const send = async () => {
     const text = input.trim();
     if (!text || busy) return;
@@ -611,12 +699,26 @@ export const ProductivityAssistant = forwardRef<ProductivityAssistantHandle, Pro
         system: ctx.systemPrompt,
         role,
         tools: ctx.availableTools.map((t) => t.id),
+        // Only students get vault tools. Containment actions are never
+        // exposed for model selection — they stay on the deterministic path.
+        toolSpecs: role === "student" ? [...VAULT_TOOL_SPECS] : undefined,
         history,
         maxTokens: 1024,
         temperature: 0.3,
         useKnowledgeBase: true,
         kbTopK: 5,
       });
+
+      const selected = (ai.toolCalls ?? [])
+        .map((c) => ({ call: c, resolved: resolveVaultToolCall(c) }))
+        .find((c) => c.resolved !== null || c.call.name === VAULT_LIST_TOOL);
+
+      if (ai.ok && selected) {
+        await runVaultTool(selected.call.name, selected.resolved, text);
+        setBusy(false);
+        return;
+      }
+
       if (ai.ok && typeof ai.response === "string" && ai.response.trim().length > 0) {
         assistantText = ai.response.trim();
         toolUsed = "ai_task";
