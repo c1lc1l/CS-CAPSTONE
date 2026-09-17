@@ -21,11 +21,40 @@ Seed from repo: `python scripts/seed_knowledge_base.py` (see `docs/KNOWLEDGE_BAS
 
 ## Handlers
 
-- `runa_ai_task_handler.py` → `runa_ai_task_handler.lambda_handler`
-- `runa_approvals_handler.py` → `runa_approvals_handler.lambda_handler`
-- `runa_audit_handler.py` → `runa_audit_handler.lambda_handler`
-- `runa_policy_handler.py` → `runa_policy_handler.lambda_handler`
-- Runtime: Python 3.12
+All four deployed functions are configured with the AWS default entry point
+`lambda_function.lambda_handler`. The repo filenames are NOT the module names
+in the deployed package — each source file must be zipped **as
+`lambda_function.py`** or the function fails at import with
+`Runtime.ImportModuleError: No module named 'lambda_function'`.
+
+| Source file | Deployed function | Handler |
+| --- | --- | --- |
+| `runa_ai_task_handler.py` | `runa-ai-task` | `lambda_function.lambda_handler` |
+| `runa_approvals_handler.py` | `runa_approvals_handler` | `lambda_function.lambda_handler` |
+| `runa_audit_handler.py` | `runa_audit_handler` | `lambda_function.lambda_handler` |
+| `runa_policy_handler.py` | `runa_policy_handler` | `lambda_function.lambda_handler` |
+
+Runtime: Python 3.12. All handlers are standard-library only, so a
+single-file zip is sufficient — no dependency packaging required.
+
+## Deploying
+
+Zip the source file under the name `lambda_function.py`, then update the code:
+
+```bash
+cd aws/lambda
+python -c "import zipfile; zipfile.ZipFile('deploy.zip','w',zipfile.ZIP_DEFLATED).write('runa_ai_task_handler.py', arcname='lambda_function.py')"
+aws lambda update-function-code --profile <profile> --region ap-southeast-1 \
+  --function-name runa-ai-task --zip-file fileb://deploy.zip
+```
+
+Verify before trusting the deploy — an import error still returns HTTP 502
+from the Function URL, so always send one real request afterwards:
+
+```bash
+curl -s -X POST "<function-url>" -H "Content-Type: application/json" \
+  -d '{"prompt":"ping","role":"student","maxTokens":32}'
+```
 
 ## Function URLs
 

@@ -13,6 +13,7 @@ dist/
 dist-electron/
 python-service/build/
 python-service/service.spec
+aws/lambda/*.zip
 
 release/
 
