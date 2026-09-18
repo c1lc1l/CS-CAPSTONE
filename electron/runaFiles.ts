@@ -15,11 +15,29 @@ const VAULT_DIR_NAME = "Runa_Folder";
 /** Hard cap for a single text write from the assistant path. */
 export const MAX_TEXT_FILE_BYTES = 512 * 1024;
 
+let cachedVaultRoot: string | null = null;
+
 export function getRunaVaultRoot(application: App): string {
-  if (application.isPackaged) {
-    return path.join(path.dirname(process.execPath), VAULT_DIR_NAME);
+  if (cachedVaultRoot) return cachedVaultRoot;
+  const fallback = path.join(application.getPath("userData"), VAULT_DIR_NAME);
+  if (!application.isPackaged) {
+    cachedVaultRoot = fallback;
+    return cachedVaultRoot;
   }
-  return path.join(application.getPath("userData"), VAULT_DIR_NAME);
+  // The portable build unpacks to a temp folder that is deleted on exit, so
+  // process.execPath points there. electron-builder exposes the folder the
+  // user actually launched the .exe from.
+  const launchDir = process.env.PORTABLE_EXECUTABLE_DIR || path.dirname(process.execPath);
+  const besideExe = path.join(launchDir, VAULT_DIR_NAME);
+  try {
+    fs.mkdirSync(besideExe, { recursive: true });
+    fs.accessSync(besideExe, fs.constants.W_OK);
+    cachedVaultRoot = besideExe;
+  } catch {
+    // Read-only location (protected folder, read-only share): keep the vault per user.
+    cachedVaultRoot = fallback;
+  }
+  return cachedVaultRoot;
 }
 
 export function ensureVaultExists(application: App): string {

@@ -95,10 +95,34 @@ interface AgentAction {
 
 type ApprovalStatus = "pending" | "approved" | "rejected" | "info_requested";
 
+/**
+ * Where an approved action runs. Approval happens on the admin's machine, but
+ * containment and student vault actions must take effect on the student's
+ * machine, so they are handed off through the shared approvals queue.
+ */
+type DispatchTarget =
+  | { kind: "user"; userId: string }
+  | { kind: "lab"; comlabId: string };
+
+interface DispatchExecution {
+  userId: string;
+  workstation: string;
+  at: number;
+  ok: boolean;
+  message: string;
+}
+
+interface ApprovalDispatch {
+  target: DispatchTarget;
+  dispatchedAt: number;
+  executions?: DispatchExecution[];
+}
+
 interface ApprovalDecision {
   decidedAt: number;
   decidedByUserId: string;
   comment?: string;
+  dispatch?: ApprovalDispatch;
 }
 
 interface ApprovalComment {
@@ -126,7 +150,7 @@ interface ApprovalRequest {
   comments?: ApprovalComment[];
 }
 
-type ExecutionStatus = "executed" | "rejected" | "hard_failed" | "simulated";
+type ExecutionStatus = "executed" | "rejected" | "hard_failed" | "simulated" | "dispatched";
 
 interface ActionExecutionResult {
   ok: boolean;
@@ -196,6 +220,8 @@ interface StoreSchema {
   }>;
   /** Offline-first attendance cache. `synced` is local bookkeeping, stripped before returning to renderer. */
   attendanceSessions: AttendanceSessionRow[];
+  /** Approval ids this machine has already executed from the shared queue, so none runs twice. */
+  executedDispatchIds: string[];
 }
 
 interface AttendanceSessionRow {
@@ -251,6 +277,7 @@ const store = new Store({
       approvalId?: string;
     }>,
     attendanceSessions: [] as AttendanceSessionRow[],
+    executedDispatchIds: [] as string[],
   },
 });
 
@@ -757,6 +784,136 @@ function findRequest(id: string): ApprovalRequest | undefined {
   return getQueue().find((r) => r.id === id);
 }
 
+// ── Approved-action dispatch ────────────────────────────────────────────
+// An approval is decided on the admin's machine, but most approved actions
+// are meant for a student's machine: the student's own vault request, or
+// containment of a lab. Executing those where the approval was clicked would
+// lock, sign out, or delete on the admin's machine instead. They are marked
+// for dispatch and picked up by the target machine from the shared queue.
+
+const DISPATCH_POLL_MS = 8_000;
+/** A dispatched action older than this is stale and never executed. */
+const DISPATCH_MAX_AGE_MS = 15 * 60_000;
+const EXECUTED_DISPATCH_LIMIT = 500;
+const CONTAINMENT_ACTIONS: ReadonlySet<ActionType> = new Set([
+  "lock_cluster",
+  "terminate_session",
+  "force_logout",
+  "wipe_terminal",
+]);
+
+/** When the current RUNA session began on this machine; containment dispatched before it is ignored. */
+let sessionStartedAt = Date.now();
+
+function dispatchTargetFor(req: ApprovalRequest): DispatchTarget | null {
+  const { type, payload } = req.action;
+  if (type.startsWith("runa_") && req.requesterRole === "student") {
+    return { kind: "user", userId: req.requesterId };
+  }
+  if (CONTAINMENT_ACTIONS.has(type)) {
+    const targetUserId = typeof payload?.targetUserId === "string" ? payload.targetUserId.trim() : "";
+    if (targetUserId) return { kind: "user", userId: targetUserId };
+    const labId = String(payload?.labId ?? "08").trim() || "08";
+    return { kind: "lab", comlabId: labId };
+  }
+  return null;
+}
+
+function describeDispatchTarget(target: DispatchTarget): string {
+  return target.kind === "user" ? `${target.userId}'s workstation` : `student workstations in COMLAB ${target.comlabId}`;
+}
+
+function getExecutedDispatchIds(): string[] {
+  const v = store.get("executedDispatchIds") as string[] | undefined;
+  return Array.isArray(v) ? v : [];
+}
+
+function markDispatchExecuted(id: string): void {
+  store.set("executedDispatchIds", [...getExecutedDispatchIds(), id].slice(-EXECUTED_DISPATCH_LIMIT));
+}
+
+let dispatchPollBusy = false;
+
+/**
+ * Runs on student machines: executes approved actions dispatched to this
+ * student or this machine's lab. Each approval id is recorded locally before
+ * execution, so a lock or sign-out can never fire twice on one machine.
+ */
+async function pollDispatchedActions(): Promise<void> {
+  const session = store.get("session");
+  if (!session || session.role !== "student" || dispatchPollBusy) return;
+  dispatchPollBusy = true;
+  try {
+    let queue: ApprovalRequest[];
+    try {
+      queue = await listApprovalsRemote();
+    } catch {
+      return; // offline: dispatched actions wait until the cloud is reachable
+    }
+    const station = getLabStationProfile();
+    const executed = new Set(getExecutedDispatchIds());
+    const now = Date.now();
+
+    for (const req of queue.sort((a, b) => a.createdAt - b.createdAt)) {
+      const dispatch = req.decision?.dispatch;
+      if (req.status !== "approved" || !dispatch || executed.has(req.id)) continue;
+      if (now - dispatch.dispatchedAt > DISPATCH_MAX_AGE_MS) continue;
+      const { target } = dispatch;
+      const isMine =
+        target.kind === "user" ? target.userId === session.userId : target.comlabId === station.comlabId;
+      if (!isMine) continue;
+      // Containment approved before this student signed in is not theirs to receive.
+      if (CONTAINMENT_ACTIONS.has(req.action.type) && dispatch.dispatchedAt < sessionStartedAt) continue;
+
+      markDispatchExecuted(req.id);
+      const approvedBy = req.decision?.decidedByUserId ?? "unknown";
+      const result = await executeAction({
+        ...req.action,
+        payload: { ...req.action.payload, approvalId: req.id, approvedBy },
+      });
+      logEvent({
+        eventType: result.ok ? "action_executed" : "action_hard_failed",
+        detail: JSON.stringify({
+          approvalId: req.id,
+          actionType: req.action.type,
+          message: result.message,
+          status: result.status,
+          executedOn: station.workstationLabel,
+          comlabId: station.comlabId,
+          evidence: result.evidence ?? null,
+        }),
+        actorUserId: session.userId,
+        actorRole: "student",
+        approvalId: req.id,
+        approverUserId: approvedBy,
+        riskTier: req.riskTier,
+      });
+
+      const execution: DispatchExecution = {
+        userId: session.userId,
+        workstation: station.workstationLabel,
+        at: Date.now(),
+        ok: result.ok,
+        message: result.message,
+      };
+      const updated: ApprovalRequest = {
+        ...req,
+        decision: {
+          ...(req.decision as ApprovalDecision),
+          dispatch: { ...dispatch, executions: [...(dispatch.executions ?? []), execution] },
+        },
+      };
+      // Only this row is written back, so a stale copy of other rows never overwrites them.
+      void upsertApprovalsRemote([updated]).catch(() => {});
+
+      // A sign-out ends the session this loop was acting for.
+      if (!store.get("session")) break;
+    }
+  } finally {
+    dispatchPollBusy = false;
+  }
+}
+
 async function executeAction(action: AgentAction): Promise<ActionExecutionResult> {
   console.log("[main] executeAction", action.type, JSON.stringify(action.payload));
 
@@ -1234,6 +1391,7 @@ function registerIpcHandlers(): void {
 
   ipcMain.handle("session:set", (_event, session: StoreSchema["session"]) => {
     store.set("session", session);
+    sessionStartedAt = Date.now();
     syncStudentRuntimeEnforcement();
     return true;
   });
@@ -1928,10 +2086,12 @@ function registerIpcHandlers(): void {
         throw new Error("Approver must be different from requester for HITL integrity.");
       }
 
+      const target = dispatchTargetFor(req);
       const decided: ApprovalDecision = {
         decidedAt: Date.now(),
         decidedByUserId: args.approverUserId,
         comment: args.comment,
+        ...(target ? { dispatch: { target, dispatchedAt: Date.now() } } : {}),
       };
       const updated: ApprovalRequest = {
         ...req,
@@ -1951,6 +2111,23 @@ function registerIpcHandlers(): void {
         approverUserId: args.approverUserId,
         riskTier: req.riskTier,
       });
+
+      if (target) {
+        const message = `Approved. Sent to ${describeDispatchTarget(target)}; it runs there within about ${Math.round(DISPATCH_POLL_MS / 1000)} seconds while that student is signed in and online.`;
+        logEvent({
+          eventType: "action_dispatched",
+          detail: JSON.stringify({ approvalId: req.id, actionType: req.action.type, target }),
+          actorUserId: args.approverUserId,
+          actorRole: "admin",
+          approvalId: req.id,
+          approverUserId: args.approverUserId,
+          riskTier: req.riskTier,
+        });
+        return {
+          request: updated,
+          result: { ok: true, status: "dispatched" as const, message },
+        };
+      }
 
       const approvedAction: AgentAction = {
         ...req.action,
@@ -2114,6 +2291,7 @@ app.whenReady().then(() => {
   mainWindow = createMainWindow();
   tray = createTray();
   syncStudentRuntimeEnforcement();
+  setInterval(() => void pollDispatchedActions(), DISPATCH_POLL_MS);
 
   app.on("activate", () => {
     if (BrowserWindow.getAllWindows().length === 0) {
