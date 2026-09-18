@@ -247,6 +247,15 @@ export function StudentDashboard() {
         const msg = `Blocked by lab policy: ${policy.domain}`;
         setSiteCheckResult({ level: "blocked", text: msg });
         pushToast(msg, "warn");
+        // Recorded so repeated attempts on blocked sites are visible to staff
+        // and to the behavioural anomaly model (blocked_url_count).
+        void api.audit.log({
+          eventType: "url_blocked",
+          detail: JSON.stringify({ domain: policy.domain, source: "student_site_check" }),
+          actorUserId: studentId || "student",
+          actorRole: "student",
+          riskTier: "medium",
+        });
         return;
       }
 
@@ -265,6 +274,13 @@ export function StudentDashboard() {
         const msg = "Suspicious URL detected. This request may be escalated to admin for blocklist enforcement.";
         setSiteCheckResult({ level: "warn", text: msg });
         pushToast("Suspicious URL detected", "warn");
+        void api.audit.log({
+          eventType: "url_flagged",
+          detail: JSON.stringify({ url: raw, source: "student_site_check", score: analyzed.data.score ?? null }),
+          actorUserId: studentId || "student",
+          actorRole: "student",
+          riskTier: "medium",
+        });
       } else {
         const msg = "URL allowed by current policy and analyzer checks.";
         setSiteCheckResult({ level: "allowed", text: msg });

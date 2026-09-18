@@ -21,7 +21,7 @@ import {
   runaRowMatchesSearch,
   type RunaAuditCategory,
 } from "./audit/runaAuditFormat";
-import type { ElectronAttendanceSessionRow } from "../../types/electron";
+import type { ElectronAttendanceSessionRow, ElectronAuditChainReport } from "../../types/electron";
 
 const MONO = ADMIN_FONT_MONO;
 const GROTESK = ADMIN_FONT_SANS;
@@ -169,6 +169,17 @@ export function AuditTrailsPanel() {
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [institutionalLogs, setInstitutionalLogs] = useState<StationLog[]>([]);
+  const [integrity, setIntegrity] = useState<ElectronAuditChainReport | null>(null);
+  const [integrityBusy, setIntegrityBusy] = useState(false);
+
+  const verifyIntegrity = useCallback(async () => {
+    setIntegrityBusy(true);
+    try {
+      setIntegrity(await electron.audit.verifyIntegrity());
+    } finally {
+      setIntegrityBusy(false);
+    }
+  }, [electron]);
 
   const refreshRuna = useCallback(async () => {
     try {
@@ -342,6 +353,35 @@ export function AuditTrailsPanel() {
         >
           Reports
         </button>
+        <div className="ml-auto flex items-center gap-2">
+          {integrity && (
+            <span
+              className="px-2 py-1 rounded border"
+              title={integrity.reason ?? "Every retained row's hash recomputes and links to its predecessor."}
+              style={{
+                fontFamily: MONO,
+                fontSize: "10px",
+                borderColor: integrity.ok ? "#4ac77e55" : "#e05c6a88",
+                color: integrity.ok ? "#4ac77e" : "#e05c6a",
+                background: integrity.ok ? "#4ac77e14" : "#e05c6a14",
+              }}
+            >
+              {integrity.ok
+                ? `CHAIN INTACT · ${integrity.rowsChecked} rows verified`
+                : `CHAIN BROKEN at row ${integrity.brokenRowId} — ${integrity.reason}`}
+            </span>
+          )}
+          <button
+            type="button"
+            onClick={() => void verifyIntegrity()}
+            disabled={integrityBusy}
+            className="px-3 py-1.5 rounded border transition-colors disabled:opacity-50"
+            title="Recompute the tamper-evident hash chain for this workstation's audit log. The check itself is recorded in the log."
+            style={{ fontFamily: MONO, fontSize: "10px", borderColor: "#3a6fff", color: "#7eb5f5", background: "transparent" }}
+          >
+            {integrityBusy ? "VERIFYING..." : "VERIFY INTEGRITY"}
+          </button>
+        </div>
       </div>
 
       {surface === "reports" ? (

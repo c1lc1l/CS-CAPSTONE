@@ -4,6 +4,7 @@ import { useNotificationContext } from "../providers/NotificationProvider";
 import { useElectron } from "../ipc/useElectron";
 import { useAdminLab } from "../context/AdminLabContext";
 import { logAudit, proposeAction } from "../agentic/approvalQueue";
+import { buildSessionRecord } from "../agentic/sessionFeatures";
 import { COMLAB_DEFINITIONS, COMLAB_IDS, buildMonitoringPcs, getComlab, type ComlabId } from "../data/comlabs";
 import { PRESENCE_LIVE_WINDOW_MS as PRESENCE_WINDOW_MS } from "../constants/presence";
 import { ADMIN_FONT_MONO, ADMIN_FONT_SANS, ADMIN_PANEL_CLASS, ADMIN_PANEL_STYLE } from "./admin/adminUiTokens";
@@ -28,6 +29,48 @@ type UsbDevice = {
 };
 
 type MonitoringPc = { id: string; status: PCStatus };
+
+type ThreatBand = "benign" | "suspicious" | "malicious";
+
+/** Operational bands over a calibrated model probability (see python-service/service.py). */
+const BAND_STYLE: Record<ThreatBand, { label: string; color: string }> = {
+  benign: { label: "BENIGN", color: "#4ac77e" },
+  suspicious: { label: "SUSPICIOUS", color: "#e8a83a" },
+  malicious: { label: "MALICIOUS", color: "#e05c6a" },
+};
+
+interface UrlVerdict {
+  url: string;
+  band: ThreatBand;
+  probability: number | null;
+  engine: string;
+  topFeatures: Array<{ feature: string; importance: number; value: unknown }>;
+  outcome: string;
+}
+
+/** Behavioural model output for one live session. */
+interface SessionRisk {
+  probability: number;
+  band: ThreatBand;
+}
+
+/** Session-facing names for the same three bands. */
+const SESSION_BAND_LABEL: Record<ThreatBand, string> = {
+  benign: "NORMAL",
+  suspicious: "WATCH",
+  malicious: "ANOMALOUS",
+};
+
+interface AnalyzeUrlResponse {
+  ok?: boolean;
+  suspicious?: boolean;
+  score?: number;
+  probability?: number;
+  band?: ThreatBand;
+  engine?: string;
+  url?: string;
+  topFeatures?: Array<{ feature: string; importance: number; value: unknown }>;
+}
 type TimelineStatus = "pending" | "active" | "done";
 interface PresenceAuditRow {
   id: number;
@@ -74,6 +117,7 @@ export function LabMonitoringPanel() {
   const [idleOverrideIds, setIdleOverrideIds] = useState<Set<string>>(() => new Set());
   const [liveStudentIds, setLiveStudentIds] = useState<string[]>([]);
   const [liveStudentPresence, setLiveStudentPresence] = useState<LiveStudentPresence[]>([]);
+  const [sessionRisk, setSessionRisk] = useState<Record<string, SessionRisk>>({});
   const [presenceUpdatedAt, setPresenceUpdatedAt] = useState<number | null>(null);
   const [recentWarning, setRecentWarning] = useState<string | null>(null);
 
@@ -110,6 +154,7 @@ export function LabMonitoringPanel() {
   const [urlInput, setUrlInput] = useState("");
   const [blockedDomains, setBlockedDomains] = useState<string[]>([]);
   const [urlCheckBusy, setUrlCheckBusy] = useState(false);
+  const [urlVerdict, setUrlVerdict] = useState<UrlVerdict | null>(null);
   const [containBusy, setContainBusy] = useState(false);
   const [terminateBusy, setTerminateBusy] = useState(false);
   const [terminateConfirm, setTerminateConfirm] = useState(false);
@@ -177,6 +222,23 @@ export function LabMonitoringPanel() {
         setLiveStudentPresence(
           Array.from(latestByUser.entries()).map(([userId, lastSeenAt]) => ({ userId, lastSeenAt })),
         );
+
+        // Behavioural anomaly scoring for each live session. Failures leave a
+        // student unscored rather than blocking the presence refresh.
+        const risks: Record<string, SessionRisk> = {};
+        for (const userId of activeStudents) {
+          const record = buildSessionRecord(rows, userId);
+          if (!record) continue;
+          const scored = await api.python.call<{ ok?: boolean; anomalyProbability?: number; band?: ThreatBand }>(
+            "/score-session",
+            record,
+            { method: "POST", timeoutMs: 10_000 },
+          );
+          if (scored.ok && scored.data?.ok && typeof scored.data.anomalyProbability === "number" && scored.data.band) {
+            risks[userId] = { probability: scored.data.anomalyProbability, band: scored.data.band };
+          }
+        }
+        if (alive) setSessionRisk(risks);
         const latestWarn = rows.find(
           (r) =>
             (r.eventType.includes("hard_failed") ||
@@ -338,9 +400,20 @@ export function LabMonitoringPanel() {
     const raw = urlInput.trim();
     if (!raw) return;
     setUrlCheckBusy(true);
+    setUrlVerdict(null);
     try {
       const check = await api.security.checkUrl(raw);
       if (check.ok && check.blocked) {
+        // Layer order matters: an enforced policy hit is authoritative and
+        // the model is never consulted.
+        setUrlVerdict({
+          url: raw,
+          band: "malicious",
+          probability: null,
+          engine: "enforced blocklist",
+          topFeatures: [],
+          outcome: "Blocked by enforced policy. Model not consulted.",
+        });
         pushToast(`Blocked by policy: ${check.domain}`, "warn");
         await logAudit({
           eventType: "url_blocked",
@@ -352,7 +425,7 @@ export function LabMonitoringPanel() {
         return;
       }
 
-      const analysis = await api.python.call<{ ok?: boolean; suspicious?: boolean; score?: number; url?: string }>(
+      const analysis = await api.python.call<AnalyzeUrlResponse>(
         "/analyze-url",
         { url: raw },
         { method: "POST", timeoutMs: 30_000 },
@@ -362,6 +435,14 @@ export function LabMonitoringPanel() {
         return;
       }
       const body = analysis.data;
+      const band: ThreatBand = body.band ?? (body.suspicious ? "malicious" : "benign");
+      const verdictBase = {
+        url: raw,
+        band,
+        probability: typeof body.probability === "number" ? body.probability : body.score ?? null,
+        engine: body.engine ?? "unknown",
+        topFeatures: body.topFeatures ?? [],
+      };
       if (body.suspicious) {
         const domain = check.domain || raw;
         const proposal = await proposeAction(
@@ -382,11 +463,21 @@ export function LabMonitoringPanel() {
           "admin",
         );
         if (proposal.autoExecuted) {
+          setUrlVerdict({ ...verdictBase, outcome: `Blocklist enforced for ${domain}.` });
           pushToast(`Blocklist enforced for ${domain}`, "warn");
         } else {
-          pushToast(`Suspicious URL queued for HITL approval: ${proposal.request.id.slice(0, 8)}…`, "warn");
+          const id = proposal.request.id.slice(0, 8);
+          setUrlVerdict({
+            ...verdictBase,
+            outcome:
+              band === "suspicious"
+                ? `Uncertain — queued for human review (approval ${id}…). Not blocked automatically.`
+                : `High confidence — blocking still requires approval (${id}…), since policy changes are HIGH risk.`,
+          });
+          pushToast(`${BAND_STYLE[band].label} URL queued for HITL approval: ${id}…`, "warn");
         }
       } else {
+        setUrlVerdict({ ...verdictBase, outcome: "Allowed. No action taken." });
         pushToast("URL is currently allowed by analyzer/policy", "success");
       }
       await refreshBlockedDomains();
@@ -608,7 +699,8 @@ export function LabMonitoringPanel() {
             </span>
           </div>
           <p className="text-[#4a6080] mb-3" style={{ fontSize: "10px", fontFamily: MONO }}>
-            Checks shared enforced blocklist first, then analyzer. Suspicious URLs queue `enforce_blocklist` via HITL.
+            Enforced blocklist first, then the URL threat model: benign &lt; 0.3 · suspicious · malicious ≥ 0.7.
+            Any non-benign result queues `enforce_blocklist` for human approval.
           </p>
           <div className="flex gap-2 mb-3">
             <input
@@ -634,6 +726,58 @@ export function LabMonitoringPanel() {
               CHECK
             </button>
           </div>
+          {urlVerdict && (
+            <div
+              className="rounded-lg border p-3 mb-3"
+              style={{ background: "#0d1320", borderColor: `${BAND_STYLE[urlVerdict.band].color}55` }}
+            >
+              <div className="flex items-center gap-2 flex-wrap mb-1.5">
+                <span
+                  className="px-2 py-0.5 rounded"
+                  style={{
+                    background: `${BAND_STYLE[urlVerdict.band].color}22`,
+                    color: BAND_STYLE[urlVerdict.band].color,
+                    fontSize: "10px",
+                    fontFamily: MONO,
+                    fontWeight: 600,
+                  }}
+                >
+                  {BAND_STYLE[urlVerdict.band].label}
+                </span>
+                {urlVerdict.probability !== null && (
+                  <span className="text-[#c5d5ea]" style={{ fontSize: "10px", fontFamily: MONO }}>
+                    P(malicious) = {urlVerdict.probability.toFixed(3)}
+                  </span>
+                )}
+                <span className="text-[#4a6080] truncate" style={{ fontSize: "9px", fontFamily: MONO }}>
+                  {urlVerdict.url}
+                </span>
+              </div>
+              {urlVerdict.probability !== null && (
+                <div className="relative h-1.5 rounded-full mb-2 overflow-hidden" style={{ background: "#1a2235" }}>
+                  <div
+                    className="absolute inset-y-0 left-0"
+                    style={{
+                      width: `${Math.min(100, urlVerdict.probability * 100)}%`,
+                      background: BAND_STYLE[urlVerdict.band].color,
+                    }}
+                  />
+                  <div className="absolute inset-y-0" style={{ left: "30%", width: 1, background: "#4a6080" }} />
+                  <div className="absolute inset-y-0" style={{ left: "70%", width: 1, background: "#4a6080" }} />
+                </div>
+              )}
+              <p className="text-[#c5d5ea] mb-1" style={{ fontSize: "10px" }}>
+                {urlVerdict.outcome}
+              </p>
+              <p className="text-[#4a6080]" style={{ fontSize: "9px", fontFamily: MONO }}>
+                engine: {urlVerdict.engine}
+                {urlVerdict.topFeatures.length > 0 &&
+                  ` · top signals: ${urlVerdict.topFeatures
+                    .map((f) => `${f.feature}=${typeof f.value === "number" ? Number(f.value.toFixed(2)) : String(f.value)}`)
+                    .join(", ")}`}
+              </p>
+            </div>
+          )}
           <div className="flex flex-wrap gap-2">
             {blockedDomains.length === 0 ? (
               <span className="text-[#4a6080]" style={{ fontSize: "9px", fontFamily: MONO }}>
@@ -827,6 +971,26 @@ export function LabMonitoringPanel() {
                     </span>
                   </div>
                   <p className="text-[#4a6080]" style={{ fontSize: "9px", fontFamily: MONO }}>{a.id}</p>
+                  {sessionRisk[a.id] && (
+                    <div className="flex items-center gap-2 mt-1.5">
+                      <span
+                        className="px-1.5 py-0.5 rounded"
+                        title="Behavioural anomaly model - prototype trained on simulated sessions"
+                        style={{
+                          background: `${BAND_STYLE[sessionRisk[a.id].band].color}22`,
+                          color: BAND_STYLE[sessionRisk[a.id].band].color,
+                          fontSize: "8px",
+                          fontFamily: MONO,
+                          fontWeight: 600,
+                        }}
+                      >
+                        SESSION {SESSION_BAND_LABEL[sessionRisk[a.id].band]}
+                      </span>
+                      <span className="text-[#4a6080]" style={{ fontSize: "8px", fontFamily: MONO }}>
+                        P(anomalous) {sessionRisk[a.id].probability.toFixed(2)}
+                      </span>
+                    </div>
+                  )}
                   <div className="flex items-center justify-between mt-1">
                     <span className="text-[#2a3a55]" style={{ fontSize: "9px", fontFamily: MONO }}>{a.pc}</span>
                     <span className="text-[#2a3a55]" style={{ fontSize: "9px", fontFamily: MONO }}>
@@ -837,7 +1001,8 @@ export function LabMonitoringPanel() {
               ))}
             </div>
             <p className="text-[#4a6080] mt-3 text-center" style={{ fontSize: "9px", fontFamily: MONO }}>
-              Active sessions shown from current lab audit evidence.
+              Active sessions shown from current lab audit evidence. Session risk comes from the behavioural anomaly
+              model, a prototype trained on simulated sessions.
             </p>
           </div>
         </div>
