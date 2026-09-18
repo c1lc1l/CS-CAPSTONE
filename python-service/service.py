@@ -28,6 +28,7 @@ import hashlib
 import logging
 import os
 import re
+import sys
 import threading
 import time
 from pathlib import Path
@@ -58,6 +59,96 @@ try:
     import libusb_package  # pyright: ignore[reportMissingImports]
 except ImportError:
     libusb_package = None
+
+
+# ─────────────────────────────────────────────
+#  ML models (Algorithm 4)
+#
+#  Feature extraction is imported from ml/*/features.py - the SAME modules
+#  used in training - so served features cannot drift from trained features.
+#  When frozen by PyInstaller the models are bundled inside service.exe and
+#  resolved from sys._MEIPASS; in development they load from the repo.
+#  If a model is missing the service still starts and reports it as
+#  unavailable rather than crashing the sidecar.
+# ─────────────────────────────────────────────
+_REPO_ROOT = Path(__file__).resolve().parent.parent
+if str(_REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(_REPO_ROOT))
+
+# Operational bands over a calibrated probability. 0.7 mirrors
+# CONFIDENCE_THRESHOLD in src/app/agentic/riskClassifier.ts.
+BAND_BENIGN_BELOW = 0.3
+BAND_MALICIOUS_AT = 0.7
+
+
+def _resource(*parts: str) -> Path:
+    base = Path(getattr(sys, "_MEIPASS", _REPO_ROOT))
+    return base.joinpath(*parts)
+
+
+def _load_model(*parts: str):
+    path = _resource(*parts)
+    try:
+        import joblib  # pyright: ignore[reportMissingImports]
+
+        model = joblib.load(path)
+        return model, None
+    except Exception as e:  # noqa: BLE001 - any failure degrades to heuristic
+        return None, f"{type(e).__name__}: {e}"
+
+
+try:
+    from ml.url.features import (  # pyright: ignore[reportMissingImports]
+        FEATURE_NAMES as URL_FEATURE_NAMES,
+        extract_features as url_extract_features,
+        normalise_host as url_normalise_host,
+    )
+    from ml.behavioral.features import (  # pyright: ignore[reportMissingImports]
+        FEATURE_NAMES as BEH_FEATURE_NAMES,
+        extract_features as beh_extract_features,
+    )
+
+    ML_FEATURES_AVAILABLE = True
+except Exception as _e:  # noqa: BLE001
+    ML_FEATURES_AVAILABLE = False
+    _ML_FEATURE_ERROR = f"{type(_e).__name__}: {_e}"
+
+URL_MODEL, URL_MODEL_ERROR = (
+    _load_model("ml", "url", "model", "runa_url_rf_deploy.joblib")
+    if ML_FEATURES_AVAILABLE
+    else (None, "feature modules unavailable")
+)
+BEH_MODEL, BEH_MODEL_ERROR = (
+    _load_model("ml", "behavioral", "model", "runa_behavioral_rf.joblib")
+    if ML_FEATURES_AVAILABLE
+    else (None, "feature modules unavailable")
+)
+
+
+def _band(p: float) -> str:
+    if p >= BAND_MALICIOUS_AT:
+        return "malicious"
+    if p >= BAND_BENIGN_BELOW:
+        return "suspicious"
+    return "benign"
+
+
+def _top_features(model, row: dict, names: list[str], k: int = 3) -> list[dict]:
+    """
+    Surface the globally most important features alongside this request's
+    values, so an administrator can see what the score was based on.
+    These are global importances, not a per-prediction attribution.
+    """
+    try:
+        # CalibratedClassifierCV -> the underlying fitted forest
+        base = model.calibrated_classifiers_[0].estimator
+        imps = getattr(base, "feature_importances_", None)
+        if imps is None:
+            return []
+        ranked = sorted(zip(names, imps), key=lambda t: t[1], reverse=True)[:k]
+        return [{"feature": n, "importance": round(float(w), 4), "value": row.get(n)} for n, w in ranked]
+    except Exception:  # noqa: BLE001
+        return []
 
 # ─────────────────────────────────────────────
 #  Configuration
@@ -228,6 +319,10 @@ def health():
         usbBackendReady=backend is not None,
         lambdaConfigured=bool(AI_LAMBDA_URL),
         definitionsStatus=_clamd_definitions_status(),
+        models={
+            "url": {"loaded": URL_MODEL is not None, "error": URL_MODEL_ERROR},
+            "behavioral": {"loaded": BEH_MODEL is not None, "error": BEH_MODEL_ERROR},
+        },
         timestamp=time.time(),
     )
 
@@ -310,12 +405,83 @@ def analyze_url():
     if not domain:
         return jsonify(ok=False, error="invalid url"), 400
 
+    # Model path: calibrated probability, banded into benign/suspicious/malicious.
+    if URL_MODEL is not None:
+        try:
+            host = url_normalise_host(normalized)
+            feats = url_extract_features(host)
+            import pandas as pd  # pyright: ignore[reportMissingImports]
+
+            row = pd.DataFrame([[feats[n] for n in URL_FEATURE_NAMES]], columns=URL_FEATURE_NAMES)
+            p = float(URL_MODEL.predict_proba(row)[0, 1])
+            band = _band(p)
+            return jsonify(
+                ok=True,
+                url=normalized,
+                domain=domain,
+                probability=round(p, 4),
+                band=band,
+                # Back-compat for existing callers that read score/suspicious.
+                score=round(p, 4),
+                suspicious=band != "benign",
+                topFeatures=_top_features(URL_MODEL, feats, URL_FEATURE_NAMES),
+                engine="rf-url-v1",
+                thresholds={"benignBelow": BAND_BENIGN_BELOW, "maliciousAtOrAbove": BAND_MALICIOUS_AT},
+            )
+        except Exception as e:  # noqa: BLE001
+            log.warning("url model scoring failed, falling back to heuristic: %s", e)
+
+    # Heuristic fallback: used only if the model is unavailable.
     blocked_keywords = ["malware", "phishing", "hack", "crack", "keygen", "trojan", "ransom"]
     text = f"{normalized} {domain}".lower()
     suspicious = any(kw in text for kw in blocked_keywords)
     score = 0.9 if suspicious else 0.1
+    return jsonify(
+        ok=True,
+        url=normalized,
+        domain=domain,
+        suspicious=suspicious,
+        score=score,
+        probability=score,
+        band="malicious" if suspicious else "benign",
+        engine="keyword-heuristic",
+        modelError=URL_MODEL_ERROR,
+    )
 
-    return jsonify(ok=True, url=normalized, domain=domain, suspicious=suspicious, score=score)
+
+# ─────────────────────────────────────────────
+#  /score-session – behavioural anomaly model (Algorithm 4, model 2)
+# ─────────────────────────────────────────────
+@app.post("/score-session")
+def score_session():
+    """
+    Scores a session feature record for behavioural anomaly.
+
+    Returns both the anomaly probability and `confidenceForEscalation`
+    (= 1 - probability). The latter exists because riskClassifier.ts escalates
+    when AgentAction.confidence is BELOW the threshold: feeding the raw
+    anomaly probability into that field would escalate normal sessions and
+    wave anomalous ones through - exactly backwards.
+    """
+    if BEH_MODEL is None:
+        return jsonify(ok=False, error="behavioural model unavailable", modelError=BEH_MODEL_ERROR), 503
+    body = request.get_json(force=True) or {}
+    try:
+        feats = beh_extract_features(body)
+        import pandas as pd  # pyright: ignore[reportMissingImports]
+
+        row = pd.DataFrame([[feats[n] for n in BEH_FEATURE_NAMES]], columns=BEH_FEATURE_NAMES)
+        p = float(BEH_MODEL.predict_proba(row)[0, 1])
+        return jsonify(
+            ok=True,
+            anomalyProbability=round(p, 4),
+            confidenceForEscalation=round(1.0 - p, 4),
+            band=_band(p),
+            topFeatures=_top_features(BEH_MODEL, feats, BEH_FEATURE_NAMES),
+            engine="rf-behavioral-v1",
+        )
+    except Exception as e:  # noqa: BLE001
+        return jsonify(ok=False, error=f"{type(e).__name__}: {e}"), 400
 
 
 # ─────────────────────────────────────────────

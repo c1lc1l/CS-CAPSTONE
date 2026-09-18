@@ -1,0 +1,49 @@
+{
+  "purpose": "size-constrained model for packaging; evaluated on the same domain-separated hold-out",
+  "full_model": {
+    "roc_auc": 0.8796,
+    "pr_auc": 0.8943,
+    "precision_at_0.7": 0.9746,
+    "recall_at_0.7": 0.5511,
+    "f1_at_0.7": 0.704,
+    "size_mb": 819.7
+  },
+  "compact_model": {
+    "roc_auc": 0.8956,
+    "pr_auc": 0.9043,
+    "precision_at_0.7": 0.9704,
+    "recall_at_0.7": 0.6217,
+    "f1_at_0.7": 0.7579,
+    "size_mb": 15.6
+  },
+  "compact_hyperparameters": {
+    "n_estimators": 150,
+    "max_depth": 18,
+    "min_samples_leaf": 10,
+    "calibration": "isotonic, cv=3, ensemble=False"
+  },
+  "bands": {
+    "benign_below": 0.3,
+    "malicious_at_or_above": 0.7
+  },
+  "compact_band_composition": [
+    {
+      "band": "benign",
+      "n": 28884,
+      "share": 0.5939,
+      "phishing_rate": 0.1559
+    },
+    {
+      "band": "suspicious",
+      "n": 5986,
+      "share": 0.1231,
+      "phishing_rate": 0.6051
+    },
+    {
+      "band": "malicious",
+      "n": 13761,
+      "share": 0.283,
+      "phishing_rate": 0.9704
+    }
+  ]
+}

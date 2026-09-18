@@ -13,6 +13,12 @@ dist/
 dist-electron/
 python-service/build/
 python-service/service.spec
+python-service/pyinstaller_build.log
+# Bundles scikit-learn and both models; exceeds GitHub's 100 MB file limit.
+# Rebuild with `npm run build:sidecar`; shipped builds live in GitHub Releases.
+python-service/service.exe
+python-service/service/
+python-service/.venv-sidecar/
 aws/lambda/*.zip
 
 # ML: regenerable from a pinned seed — reports/ are kept as thesis artifacts
@@ -28,3 +34,4 @@ nul
 
 # Local ad-hoc bundles (not source)
 release.rar
+build_win.log

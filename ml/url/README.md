@@ -29,7 +29,47 @@ Hold-out ROC-AUC 0.8734 · PR-AUC 0.8871 · OOB 0.8217
 
 5-fold stratified **group** CV: F1-macro **0.8020 ± 0.0260**, ROC-AUC 0.8380 ± 0.0305.
 
-## Model selection — Random Forest did NOT win
+## Deployment model — smaller and better
+
+The evaluation model above is ~820 MB (calibrated with `cv=3`, keeping three
+full-depth 400-tree forests), which cannot ship inside a desktop app that
+self-extracts. `export_deploy_model.py` trains a compact variant on the
+**identical** domain-separated split and evaluates it on the **identical**
+hold-out:
+
+| Metric (calibrated) | Evaluation model | Deployed model | Δ |
+| --- | --- | --- | --- |
+| ROC-AUC | 0.8796 | **0.8956** | +0.016 |
+| PR-AUC | 0.8943 | **0.9043** | +0.010 |
+| Precision @ 0.7 | 0.9746 | 0.9704 | −0.004 |
+| Recall @ 0.7 | 0.5511 | **0.6217** | +0.071 |
+| F1 @ 0.7 | 0.7040 | **0.7579** | +0.054 |
+| Size | 819.7 MB | **15.6 MB** | |
+
+Compact hyperparameters: 150 trees, `max_depth=18`, `min_samples_leaf=10`,
+isotonic calibration with `ensemble=False` (one forest, calibrated from
+cross-validated predictions). These were chosen *a priori* as standard
+regularisation settings and evaluated once — not tuned against the test set.
+
+The full-depth forest was **overfitting**: regularisation generalises better
+to domains it has never seen. The deployed model is what ships and what
+`/analyze-url` serves, so it is the model whose numbers belong in Chapter 4.
+
+Deployed band composition on the hold-out (0.3 / 0.7):
+
+| Band | Share | Actually phishing |
+| --- | --- | --- |
+| benign | 59.4% | 15.6% |
+| suspicious | 12.3% | 60.5% |
+| malicious | 28.3% | 97.0% |
+
+## Model selection — Random Forest did NOT win (unregularised)
+
+> **Open question:** the comparison below used an *unregularised* Random
+> Forest. The regularised deployment forest scores higher than every figure
+> in this table, so a regularised forest may well win a re-run. That has not
+> been tested and must not be claimed until it is — re-run the baseline
+> comparison with the deployment hyperparameters before writing Chapter 4.
 
 Domain-separated 3-fold F1-macro on the training split:
 

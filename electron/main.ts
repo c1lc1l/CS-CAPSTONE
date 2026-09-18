@@ -1044,7 +1044,12 @@ function syncStudentRuntimeEnforcement(): void {
 function startPythonService(): void {
   try {
     const isPacked = app.isPackaged;
-    const serviceExe = path.join(process.resourcesPath, "python-service", "service.exe");
+    // Directory build (python-service/service/service.exe) is preferred: a
+    // one-file build self-extracts on every launch. The legacy one-file path
+    // is kept as a fallback for older packages.
+    const serviceDirExe = path.join(process.resourcesPath, "python-service", "service", "service.exe");
+    const legacyServiceExe = path.join(process.resourcesPath, "python-service", "service.exe");
+    const serviceExe = fsSync.existsSync(serviceDirExe) ? serviceDirExe : legacyServiceExe;
     const packedScriptPath = path.join(process.resourcesPath, "python-service", "service.py");
     // Compiled main lives in dist-electron/electron/ — repo root is two levels up.
     const scriptPath = path.join(__dirname, "..", "..", "python-service", "service.py");
