@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import {
   Shield,
@@ -11,10 +11,11 @@ import {
   AlertTriangle,
   Eye,
   EyeOff,
+  MonitorSmartphone,
 } from "lucide-react";
 import { authenticate } from "../auth/demoUsers";
 import { useElectron } from "../ipc/useElectron";
-import { getComlab } from "../data/comlabs";
+import { COMLAB_DEFINITIONS, getComlab } from "../data/comlabs";
 import type { ElectronRole } from "../../types/electron";
 
 const MONO = "'Share Tech Mono', monospace";
@@ -36,6 +37,24 @@ export function LoginPage() {
   const [loginError, setLoginError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [workstationComlabId, setWorkstationComlabId] = useState("");
+  const [workstationLabel, setWorkstationLabel] = useState("");
+
+  // Prefill from whatever this machine was last confirmed as, so a
+  // returning student on the same PC doesn't have to retype it — but the
+  // fields stay editable and login is still gated on them, so a wrong or
+  // stale saved value can always be corrected before it's used.
+  useEffect(() => {
+    void (async () => {
+      try {
+        const station = await api.labStation.get();
+        if (station?.comlabId) setWorkstationComlabId(station.comlabId);
+        if (station?.workstationLabel) setWorkstationLabel(station.workstationLabel);
+      } catch {
+        /* first run on this machine — leave blank, student must fill it in */
+      }
+    })();
+  }, [api]);
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -51,6 +70,11 @@ export function LoginPage() {
         setLoginError(
           `This account is a ${user.role === "admin" ? "admin" : "student"} account. Switch the tab above.`,
         );
+        return;
+      }
+      const trimmedWorkstationLabel = workstationLabel.trim();
+      if (user.role === "student" && (!workstationComlabId || !trimmedWorkstationLabel)) {
+        setLoginError("Select your comlab and enter this PC's label before signing in.");
         return;
       }
       const now = Date.now();
@@ -71,7 +95,10 @@ export function LoginPage() {
       });
       if (user.role === "student") {
         try {
-          const station = await api.labStation.get();
+          const station = await api.labStation.set({
+            comlabId: workstationComlabId,
+            workstationLabel: trimmedWorkstationLabel,
+          });
           const def = getComlab(station.comlabId);
           await api.attendance.checkIn({
             studentEmail: user.email,
@@ -272,6 +299,60 @@ export function LoginPage() {
                   </div>
                 )}
               </div>
+
+              {/* Workstation confirmation — students only, required before sign-in */}
+              {!isAdmin && (
+                <div className="flex gap-3">
+                  <div className="flex-1">
+                    <label className="block text-[#4a6fa5] tracking-widest uppercase mb-2" style={{ fontSize: "9px", fontFamily: MONO }}>
+                      Comlab
+                    </label>
+                    <select
+                      value={workstationComlabId}
+                      onChange={(e) => setWorkstationComlabId(e.target.value)}
+                      className="w-full rounded-sm px-3 py-3 text-[#c5d5ea] border outline-none transition-colors"
+                      style={{
+                        background: "#0f1a2a",
+                        borderColor: "#1e2e48",
+                        fontSize: "13px",
+                        fontFamily: MONO,
+                      }}
+                    >
+                      <option value="" disabled>
+                        Select…
+                      </option>
+                      {COMLAB_DEFINITIONS.map((c) => (
+                        <option key={c.id} value={c.id}>
+                          {c.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="flex-1">
+                    <label className="block text-[#4a6fa5] tracking-widest uppercase mb-2" style={{ fontSize: "9px", fontFamily: MONO }}>
+                      This PC's Label
+                    </label>
+                    <div className="relative">
+                      <input
+                        type="text"
+                        value={workstationLabel}
+                        onChange={(e) => setWorkstationLabel(e.target.value)}
+                        placeholder="e.g. PC-04"
+                        className="w-full rounded-sm pl-9 pr-3 py-3 text-[#c5d5ea] placeholder-[#2e4060] border outline-none transition-colors"
+                        style={{
+                          background: "#0f1a2a",
+                          borderColor: "#1e2e48",
+                          fontSize: "13px",
+                          fontFamily: MONO,
+                        }}
+                        onFocus={(e) => (e.target.style.borderColor = "#4a6fa5")}
+                        onBlur={(e) => (e.target.style.borderColor = "#1e2e48")}
+                      />
+                      <MonitorSmartphone size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#2e4060] pointer-events-none" />
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* Persistent session + Recovery */}
               <div className="flex items-center justify-between">

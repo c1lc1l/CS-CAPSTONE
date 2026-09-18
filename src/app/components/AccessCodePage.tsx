@@ -1,8 +1,8 @@
 import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router";
-import { Shield, Fingerprint, Lock, ArrowRight, ArrowLeft } from "lucide-react";
+import { Shield, Fingerprint, Lock, ArrowRight, ArrowLeft, MonitorSmartphone } from "lucide-react";
 import { useElectron } from "../ipc/useElectron";
-import { getComlab } from "../data/comlabs";
+import { COMLAB_DEFINITIONS, getComlab } from "../data/comlabs";
 
 const MONO = "'Share Tech Mono', monospace";
 const BRAND = "'Orbitron', sans-serif";
@@ -65,11 +65,26 @@ export function AccessCodePage() {
   const [code, setCode] = useState<string[]>(Array(CODE_LENGTH).fill(""));
   const [error, setError] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [workstationComlabId, setWorkstationComlabId] = useState("");
+  const [workstationLabel, setWorkstationLabel] = useState("");
+  const [workstationError, setWorkstationError] = useState(false);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   useEffect(() => {
     inputRefs.current[0]?.focus();
   }, []);
+
+  useEffect(() => {
+    void (async () => {
+      try {
+        const station = await api.labStation.get();
+        if (station?.comlabId) setWorkstationComlabId(station.comlabId);
+        if (station?.workstationLabel) setWorkstationLabel(station.workstationLabel);
+      } catch {
+        /* first run on this machine — leave blank, must be filled in */
+      }
+    })();
+  }, [api]);
 
   const handleInput = (index: number, value: string) => {
     const char = value.replace(/[^a-fA-F0-9]/gi, "").slice(-1).toUpperCase();
@@ -124,6 +139,12 @@ export function AccessCodePage() {
       setError(true);
       return;
     }
+    const trimmedWorkstationLabel = workstationLabel.trim();
+    if (!workstationComlabId || !trimmedWorkstationLabel) {
+      setWorkstationError(true);
+      return;
+    }
+    setWorkstationError(false);
     setSubmitting(true);
     try {
       const codeStr = code.join("");
@@ -140,7 +161,10 @@ export function AccessCodePage() {
         expiresAt: now + ACCESS_SESSION_MS,
       });
       try {
-        const station = await api.labStation.get();
+        const station = await api.labStation.set({
+          comlabId: workstationComlabId,
+          workstationLabel: trimmedWorkstationLabel,
+        });
         const def = getComlab(station.comlabId);
         await api.attendance.checkIn({
           studentEmail: pseudonym,
@@ -319,6 +343,64 @@ export function AccessCodePage() {
                   style={{ fontSize: "9px", fontFamily: MONO }}
                 >
                   Please fill all 6 digits
+                </p>
+              )}
+
+              {/* Workstation confirmation — required before the code is validated */}
+              <div className="flex gap-2 mb-3">
+                <div className="flex-1">
+                  <label className="block text-[#4a6080] tracking-widest uppercase mb-1.5" style={{ fontSize: "8px", fontFamily: MONO }}>
+                    Comlab
+                  </label>
+                  <select
+                    value={workstationComlabId}
+                    onChange={(e) => setWorkstationComlabId(e.target.value)}
+                    className="w-full rounded-sm px-2 py-2.5 text-[#c5d5ea] border outline-none transition-colors"
+                    style={{
+                      background: "#0f1a2a",
+                      borderColor: workstationError ? "#e05c6a" : "#2a3a55",
+                      fontSize: "11px",
+                      fontFamily: MONO,
+                    }}
+                  >
+                    <option value="" disabled>
+                      Select…
+                    </option>
+                    {COMLAB_DEFINITIONS.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="flex-1">
+                  <label className="block text-[#4a6080] tracking-widest uppercase mb-1.5" style={{ fontSize: "8px", fontFamily: MONO }}>
+                    This PC's Label
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="text"
+                      value={workstationLabel}
+                      onChange={(e) => setWorkstationLabel(e.target.value)}
+                      placeholder="e.g. PC-04"
+                      className="w-full rounded-sm pl-7 pr-2 py-2.5 text-[#c5d5ea] placeholder-[#2e4060] border outline-none transition-colors"
+                      style={{
+                        background: "#0f1a2a",
+                        borderColor: workstationError ? "#e05c6a" : "#2a3a55",
+                        fontSize: "11px",
+                        fontFamily: MONO,
+                      }}
+                    />
+                    <MonitorSmartphone size={12} className="absolute left-2 top-1/2 -translate-y-1/2 text-[#2e4060] pointer-events-none" />
+                  </div>
+                </div>
+              </div>
+              {workstationError && (
+                <p
+                  className="text-[#e05c6a] mb-4 tracking-widest uppercase"
+                  style={{ fontSize: "9px", fontFamily: MONO }}
+                >
+                  Select your comlab and enter this PC's label
                 </p>
               )}
 
